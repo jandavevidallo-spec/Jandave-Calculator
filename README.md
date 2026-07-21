@@ -23,7 +23,7 @@ A scientific calculator built with a natural display (2D) interface, similar to 
 
 ## Live Demo
 
-[https://hello-im-testing.vercel.app/](https://hello-im-testing.vercel.app/)
+[https://jandavevidallo-spec.github.io/Hello-Im-Testing/](https://jandavevidallo-spec.github.io/Hello-Im-Testing/)
 
 ## Repository
 
