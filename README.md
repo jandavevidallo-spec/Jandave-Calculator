@@ -23,7 +23,7 @@ A scientific calculator built with a natural display (2D) interface, similar to 
 
 ## Live Demo
 
-[https://jandavevidallo-spec.github.io/Hello-Im-Testing/](https://jandavevidallo-spec.github.io/Hello-Im-Testing/)
+[https://hello-im-testing.vercel.app/](https://hello-im-testing.vercel.app/)
 
 ## Repository
 
@@ -54,8 +54,8 @@ open index.html
 
 ## Roadmap
 
-- [ ] Unit conversions
-- [ ] Dark/light theme toggle
+- [ ] 25+ digit precision
+- [ ] more functions
 
 ## Author
 
