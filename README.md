@@ -54,8 +54,8 @@ open index.html
 
 ## Roadmap
 
-- [ ] 25+ digit precision
-- [ ] more functions
+- [ ] Much Better Ui 
+- [ ] More and more functions
 
 ## Author
 
