@@ -1,0 +1,3227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Jandave Calc 1 - Natural Display</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--bg-main:#0f1219;--calc-plate:#1a1e29;--lcd-bg:#9ebf93;--lcd-ink:#0d1607;--key-num-bg:#e2e1db;--key-num-ink:#111115;--key-fn-bg:#2e3545;--key-fn-ink:#f8fafc;--key-op-bg:#1e2330;--key-op-ink:#f1f5f9;--key-orange:#d946ef}
+body{background-color:#0d0f14;font-family:'Inter',sans-serif}
+html.light body{background-color:#dfe2e8}
+html.light #calcShell{border-color:#b9bfcc}
+html.light #mainTitle{color:#161a22}
+.calc-key{position:relative;transition:background-color .1s ease,transform .05s ease;border:1px solid rgba(0,0,0,.2)}
+.calc-key:active{transform:translateY(1px);opacity:.9}
+.scroller::-webkit-scrollbar{width:3px;height:3px}
+.scroller::-webkit-scrollbar-track{background:transparent}
+.scroller::-webkit-scrollbar-thumb{background:rgba(13,22,7,.3);border-radius:1.5px}
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-2 md:p-6 select-none">
+<div id="calcShell" class="relative w-full max-w-[420px] rounded-2xl p-4 text-white border-[3px] border-[#3b4252] bg-[var(--calc-plate)] select-none">
+ <div class="flex items-center justify-between mb-2 px-1">
+  <div>
+   <h1 id="mainTitle" class="text-[#eceff4] font-black tracking-wider text-xl font-mono leading-none">Jandave Calc 1</h1>
+   <div class="text-[9px] text-teal-400 font-bold tracking-widest mt-1 uppercase">
+    Natural Display 2D System • 100+ Digit Engine
+   </div>
+  </div>
+  <div class="flex gap-1">
+  <button id="btnConv" class="calc-key rounded w-9 h-7 bg-[#2e3542] text-teal-300 text-[8px] font-black">CONV</button>
+  <button id="btnTheme" class="calc-key rounded w-7 h-7 bg-[#2e3542] text-amber-300 text-xs font-black">🌙</button>
+  </div>
+ </div>
+ <div class="p-2 rounded-lg mb-3 relative border-[3px] border-[#242933] bg-[#050507]">
+  <div id="lcdScreen" class="rounded p-2 h-[135px] flex flex-col justify-between overflow-hidden relative bg-[var(--lcd-bg)] text-[var(--lcd-ink)] font-mono transition-all duration-150">
+   <div class="flex items-center justify-between text-[9px] font-black opacity-85 px-0.5 pb-0.5 border-b border-black/10">
+    <div class="flex gap-2">
+     <span id="indShift" class="opacity-15 transition-all duration-100 text-slate-900 font-bold">S</span>
+     <span id="indAlpha" class="opacity-15 transition-all duration-100 text-slate-900 font-bold">A</span>
+     <span id="indM" class="opacity-15 transition-all duration-100 font-serif font-bold">M</span>
+    </div>
+    <div class="flex gap-1.5">
+     <span id="indMode" class="text-slate-900 font-black uppercase px-1 rounded bg-black/10 text-[8px]">COMP</span>
+     <span id="indAngle" class="text-slate-900 font-extrabold">D</span>
+     <span class="text-slate-900 font-extrabold">Math</span>
+    </div>
+   </div>
+   <div id="normalWrap" class="flex flex-col flex-1 min-h-0">
+    <div class="w-full flex justify-end items-center overflow-hidden mt-1 px-0.5">
+     <input id="exprInput" type="text" readonly autocomplete="off" spellcheck="false"
+         class="w-full text-right bg-transparent border-none outline-none font-mono text-xs text-slate-900 font-bold italic whitespace-nowrap opacity-65"
+         placeholder="Ready">
+    </div>
+    <div id="bigDisplay" class="flex justify-start items-center overflow-x-auto scroller text-slate-900 font-bold min-h-[42px] max-w-full text-lg pr-1"></div>
+    <div id="smallResult" class="flex justify-end items-center overflow-x-auto scroller text-slate-900 text-xs font-bold opacity-80 h-5 pb-0.5 whitespace-nowrap"></div>
+   </div>
+   <div id="graphWrap" class="hidden flex-col flex-1 min-h-0 mt-1">
+    <div class="relative flex-1 min-h-0 w-full">
+     <canvas id="graphCanvas" class="w-full h-full cursor-crosshair block"></canvas>
+     <div id="graph3dBox" class="hidden absolute inset-0 cursor-grab active:cursor-grabbing w-full h-full overflow-hidden"></div>
+    </div>
+    <div id="graphStatus" class="text-[9px] font-bold px-0.5 pt-0.5 overflow-x-auto scroller whitespace-nowrap min-h-[18px] flex items-center text-slate-950">Y1 = x^2</div>
+   </div>
+   <div id="lcdModal" class="hidden absolute inset-0 bg-[#8fae87] z-30 flex flex-col p-2 text-slate-950 border border-slate-700">
+    <div class="flex items-center justify-between border-b border-slate-900/30 pb-0.5 mb-1.5">
+     <span id="modalTitle" class="text-[9px] font-black uppercase tracking-widest text-slate-900">DIALOG</span>
+     <button id="closeModalBtn" class="text-xs font-black px-1.5 hover:bg-black/10 rounded">✕</button>
+    </div>
+    <div id="modalBody" class="flex-1 overflow-y-auto text-xs leading-tight scroller"></div>
+   </div>
+  </div>
+ </div>
+ <div class="flex justify-between items-center px-1 mb-3.5 relative z-10 gap-2">
+  <div class="flex flex-col gap-1 items-center">
+   <div class="flex gap-1">
+    <div class="flex flex-col items-center">
+     <span class="text-[7.5px] text-amber-500 font-black mb-0.5">SHIFT</span>
+     <button id="btnShift" class="calc-key rounded w-10 h-[26px] bg-[#2e3542] text-amber-400 text-xs font-black flex items-center justify-center">
+      S
+     </button>
+    </div>
+    <div class="flex flex-col items-center">
+     <span class="text-[7.5px] text-pink-500 font-black mb-0.5">ALPHA</span>
+     <button id="btnAlpha" class="calc-key rounded w-10 h-[26px] bg-[#2e3542] text-pink-400 text-xs font-black flex items-center justify-center">
+      A
+     </button>
+    </div>
+   </div>
+  </div>
+  <div class="relative w-[104px] h-[104px] flex-shrink-0">
+   <div class="w-full h-full rounded-full bg-[#242933] border-[3px] border-[#3b4252] relative flex items-center justify-center shadow-lg">
+    <span class="text-[7px] text-slate-400 font-black tracking-wider pointer-events-none select-none z-10">REPLAY</span>
+    <button id="arrowUp" title="Cursor Up"
+        class="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-4 flex items-center justify-center hover:bg-white/10 rounded-t-full active:bg-white/25 z-20">
+     <span class="text-[8px] text-slate-300">▲</span>
+    </button>
+    <button id="arrowRight" title="Cursor Right"
+        class="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-4 flex items-center justify-center hover:bg-white/10 rounded-r-full active:bg-white/25 z-20">
+     <span class="text-[8px] text-slate-300">▶</span>
+    </button>
+    <button id="arrowDown" title="Cursor Down"
+        class="absolute bottom-1 left-1/2 -translate-x-1/2 w-8 h-4 flex items-center justify-center hover:bg-white/10 rounded-b-full active:bg-white/25 z-20">
+     <span class="text-[8px] text-slate-300">▼</span>
+    </button>
+    <button id="arrowLeft" title="Cursor Left"
+        class="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-4 flex items-center justify-center hover:bg-white/10 rounded-l-full active:bg-white/25 z-20">
+     <span class="text-[8px] text-slate-300">◀</span>
+    </button>
+   </div>
+  </div>
+  <div class="flex gap-1">
+   <div class="flex flex-col items-center">
+    <span class="text-[7.5px] text-amber-500 font-black mb-0.5">SETUP</span>
+    <button id="btnMode" class="calc-key rounded w-10 h-[26px] bg-[#2e3542] text-slate-100 text-[8px] font-black flex items-center justify-center">
+     MODE
+    </button>
+   </div>
+   <div class="flex flex-col items-center">
+    <span class="text-[7.5px] text-slate-400 font-black mb-0.5">ON</span>
+    <button id="btnOn" class="calc-key rounded w-10 h-[26px] bg-[#2e3542] text-emerald-400 text-[8px] font-black flex items-center justify-center">
+     ON
+    </button>
+   </div>
+  </div>
+ </div>
+ <div class="grid grid-cols-5 gap-1.5 mb-3 px-0.5">
+  <button id="btnVarA" class="calc-key flex flex-col items-center justify-center py-1 rounded bg-[#242936] border border-slate-700/50 hover:bg-[#2d3343]">
+   <div class="flex justify-between w-full px-1 text-[6px] font-bold leading-none mb-0.5">
+    <span class="text-amber-500">MatA</span>
+    <span class="text-pink-500">VctA</span>
+   </div>
+   <span class="text-slate-100 text-[9px] font-black uppercase">Var A</span>
+  </button>
+  <button id="btnVarB" class="calc-key flex flex-col items-center justify-center py-1 rounded bg-[#242936] border border-slate-700/50 hover:bg-[#2d3343]">
+   <div class="flex justify-between w-full px-1 text-[6px] font-bold leading-none mb-0.5">
+    <span class="text-amber-500">MatB</span>
+    <span class="text-pink-500">VctB</span>
+   </div>
+   <span class="text-slate-100 text-[9px] font-black uppercase">Var B</span>
+  </button>
+  <button id="btnVarC" class="calc-key flex flex-col items-center justify-center py-1 rounded bg-[#242936] border border-slate-700/50 hover:bg-[#2d3343]">
+   <div class="flex justify-between w-full px-1 text-[6px] font-bold leading-none mb-0.5">
+    <span class="text-amber-500">MatC</span>
+    <span class="text-pink-500">VctC</span>
+   </div>
+   <span class="text-slate-100 text-[9px] font-black uppercase">Var C</span>
+  </button>
+  <button id="btnOptn" class="calc-key flex flex-col items-center justify-center py-1 rounded bg-[#242936] border border-slate-700/50 hover:bg-[#2d3343]">
+   <div class="text-[6px] font-black leading-none mb-0.5 text-amber-500 uppercase">Funcs</div>
+   <span class="text-amber-400 text-[9px] font-black uppercase">Optn</span>
+  </button>
+  <button id="btnHist" class="calc-key flex flex-col items-center justify-center py-1 rounded bg-[#242936] border border-slate-700/50 hover:bg-[#2d3343]">
+   <div class="text-[6px] font-black leading-none mb-0.5 text-pink-500 uppercase">Logs</div>
+   <span class="text-slate-100 text-[9px] font-black uppercase">Hist</span>
+  </button>
+ </div>
+ <div class="grid grid-cols-6 gap-1 mb-3 p-1 rounded bg-black/20 border border-slate-800">
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-amber-500 font-bold mb-0.5">■/■</span>
+   <button id="fnFrac" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">a/b</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-amber-500 font-bold mb-0.5">³√</span>
+   <button id="fnSqrt" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">√</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-amber-500 font-bold mb-0.5">x³</span>
+   <button id="fnPower2" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">x²</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-amber-500 font-bold mb-0.5">ʸ√</span>
+   <button id="fnPowerY" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">xʸ</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-amber-500 font-bold mb-0.5">10ˣ</span>
+   <button id="fnLog" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">log</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-amber-500 font-bold mb-0.5">eˣ</span>
+   <button id="fnLn" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">ln</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-pink-500 font-bold mb-0.5">A</span>
+   <button id="fnNegate" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">(-)</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-pink-500 font-bold mb-0.5">B</span>
+   <button id="fnDms" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">º' "</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-pink-500 font-bold mb-0.5">C</span>
+   <button id="fnHyp" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">hyp</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <div class="flex justify-between w-full px-0.5 text-[6px] font-bold leading-none mb-0.5">
+    <span class="text-amber-500">sin⁻¹</span>
+    <span class="text-pink-500">D</span>
+   </div>
+   <button id="fnSin" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">sin</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <div class="flex justify-between w-full px-0.5 text-[6px] font-bold leading-none mb-0.5">
+    <span class="text-amber-500">cos⁻¹</span>
+    <span class="text-pink-500">E</span>
+   </div>
+   <button id="fnCos" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">cos</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <div class="flex justify-between w-full px-0.5 text-[6px] font-bold leading-none mb-0.5">
+    <span class="text-amber-500">tan⁻¹</span>
+    <span class="text-pink-500">F</span>
+   </div>
+   <button id="fnTan" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">tan</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-pink-500 font-bold mb-0.5">X</span>
+   <button id="fnVarX" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-pink-400 text-[9px] font-bold">X</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-pink-500 font-bold mb-0.5">Y</span>
+   <button id="fnVarY" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-pink-400 text-[9px] font-bold">Y</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <div class="flex justify-between w-full px-0.5 text-[6px] font-bold leading-none mb-0.5">
+    <span class="text-amber-500">{</span>
+    <span class="text-pink-500">M</span>
+   </div>
+   <button id="fnOpenParen" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">(</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <div class="flex justify-between w-full px-0.5 text-[6px] font-bold leading-none mb-0.5">
+    <span class="text-amber-500">}</span>
+    <span class="text-pink-500">i</span>
+   </div>
+   <button id="fnCloseParen" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">)</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-amber-500 font-bold mb-0.5">a b/c</span>
+   <button id="fnSdToggle" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">S⇔D</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[6px] text-amber-500 font-bold mb-0.5">M-</span>
+   <button id="fnMemPlus" class="calc-key w-full py-1.5 rounded bg-[#2c3241] text-slate-100 text-[9px] font-bold">M+</button>
+  </div>
+ </div>
+ <div class="grid grid-cols-5 gap-2 px-0.5">
+  <button id="num7" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">7</button>
+  <button id="num8" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">8</button>
+  <button id="num9" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">9</button>
+  <button id="keyDel" class="calc-key py-2 rounded-lg bg-pink-600 text-white text-xs font-black uppercase hover:bg-pink-700">DEL</button>
+  <button id="keyAc" class="calc-key py-2 rounded-lg bg-pink-600 text-white text-xs font-black uppercase hover:bg-pink-700">AC</button>
+  <button id="num4" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">4</button>
+  <button id="num5" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">5</button>
+  <button id="num6" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">6</button>
+  <button id="opMul" class="calc-key py-2 rounded-lg bg-[#222736] text-slate-100 text-lg font-black hover:bg-[#2d3348]">×</button>
+  <button id="opDiv" class="calc-key py-2 rounded-lg bg-[#222736] text-slate-100 text-lg font-black hover:bg-[#2d3348]">÷</button>
+  <button id="num1" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">1</button>
+  <button id="num2" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">2</button>
+  <button id="num3" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">3</button>
+  <button id="opAdd" class="calc-key py-2 rounded-lg bg-[#222736] text-slate-100 text-lg font-black hover:bg-[#2d3348]">+</button>
+  <button id="opSub" class="calc-key py-2 rounded-lg bg-[#222736] text-slate-100 text-lg font-black hover:bg-[#2d3348]">−</button>
+  <button id="num0" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">0</button>
+  <button id="charDecimal" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">.</button>
+  <div class="flex flex-col items-center">
+   <span class="text-[7px] text-amber-500 font-extrabold leading-none mb-0.5">π  e</span>
+   <button id="btnConst" class="calc-key w-full py-2.5 rounded-lg bg-[#ecebe6] text-slate-900 text-xs font-black hover:bg-[#dbdad4]">π</button>
+  </div>
+  <div class="flex flex-col items-center">
+   <span class="text-[7px] text-amber-500 font-bold leading-none mb-0.5">DRG►</span>
+   <button id="btnAns" class="calc-key w-full py-2.5 rounded-lg bg-[#ecebe6] text-slate-900 text-xs font-black hover:bg-[#dbdad4]">Ans</button>
+  </div>
+  <button id="keyEval" class="calc-key py-2 rounded-lg bg-[#ecebe6] text-slate-900 text-lg font-black hover:bg-[#dbdad4]">=</button>
+ </div>
+ <div class="text-center text-[8.5px] text-slate-500 font-extrabold tracking-widest uppercase mt-3.5">
+  Jandave Calc 1 • Natural Display Engine
+ </div>
+</div>
+<script>
+"use strict";
+const Calculator = {
+  state: {
+    isDegree: true,
+    shiftMode: false,
+    alphaMode: false,
+    activeMode: 'COMP',
+    mainExpr: '',
+    mainCursor: 0,
+    activeFrac: null,
+    lastCalculatedAnswer: '0',
+    history: [],
+    graph: {
+      mode: '2D',
+      y1: 'x^2', y2: 'sin(x)*4', y3: '', y4: '',
+      z1: 'sqrt(25 - x^2 - y^2)',
+      isSphereMode: false,
+      sphereRadius: 5,
+      xmin: -10, xmax: 10, ymin: -10, ymax: 10, zmin: -6, zmax: 6,
+      trace: false, traceX: 0, traceIdx: 1,
+      rotX: 0.95, rotZ: 0.65, zoom3d: 1.0,
+      bg: 'dark', vars: { a: 1, b: 1, c: 1, k: 1 }
+    },
+    stat: { data: [] },
+    theme: 'dark'
+  },
+  memory: {
+    A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, X: 0, Y: 0, M: 0
+  },
+  matrices: {
+    A: [[1, 2], [3, 4]],
+    B: [[1, 0], [0, 1]],
+    C: [[2, -1], [0, 3]]
+  },
+  matrixDims: { A: [2, 2], B: [2, 2], C: [2, 2] },
+  vectors: {
+    A: [1, 2, 3],
+    B: [4, 5, 6],
+    C: [1, 0, 0]
+  },
+  vectorDims: { A: 3, B: 3, C: 3 },
+  DOM: {
+    inputEl: document.getElementById('exprInput'),
+    bigDisplay: document.getElementById('bigDisplay'),
+    smallResult: document.getElementById('smallResult'),
+    lcdModal: document.getElementById('lcdModal'),
+    modalTitle: document.getElementById('modalTitle'),
+    modalBody: document.getElementById('modalBody'),
+    closeModalBtn: document.getElementById('closeModalBtn'),
+    indShift: document.getElementById('indShift'),
+    indAlpha: document.getElementById('indAlpha'),
+    indM: document.getElementById('indM'),
+    indMode: document.getElementById('indMode'),
+    indAngle: document.getElementById('indAngle'),
+    btnShift: document.getElementById('btnShift'),
+    btnAlpha: document.getElementById('btnAlpha'),
+    btnConst: document.getElementById('btnConst'),
+    lcdScreen: document.getElementById('lcdScreen'),
+    normalWrap: document.getElementById('normalWrap'),
+    graphWrap: document.getElementById('graphWrap'),
+    graphCanvas: document.getElementById('graphCanvas'),
+    graph3dBox: document.getElementById('graph3dBox'),
+    graphStatus: document.getElementById('graphStatus')
+  },
+  init() {
+    const self = this;
+    math.config({
+      number: 'BigNumber',
+      precision: 160
+    });
+    const baseSin = math.sin;
+    const baseCos = math.cos;
+    const baseTan = math.tan;
+    const baseAsin = math.asin;
+    const baseAcos = math.acos;
+    const baseAtan = math.atan;
+    const baseAtan2 = math.atan2;
+    const toRad = x => self.state.isDegree ? math.divide(math.multiply(x, math.pi), math.bignumber(180)) : x;
+    const fromRad = x => self.state.isDegree ? math.divide(math.multiply(x, math.bignumber(180)), math.pi) : x;
+    const bigFact = (num) => {
+      let n = math.bignumber(num);
+      if (n.lt(0) || !n.isInteger())
+        throw new Error('Domain Error');
+      let res = math.bignumber(1);
+      for (let i = math.bignumber(2); i.lte(n); i = i.plus(1)) {
+        res = res.times(i);
+      }
+      return res;
+    };
+    math.import({
+      sin: x => baseSin(toRad(x)),
+      cos: x => baseCos(toRad(x)),
+      tan: x => baseTan(toRad(x)),
+      asin: x => fromRad(baseAsin(x)),
+      acos: x => fromRad(baseAcos(x)),
+      atan: x => fromRad(baseAtan(x)),
+      factorial: x => bigFact(x),
+      nCr: (n, r) => {
+        const bn = math.bignumber(n);
+        const br = math.bignumber(r);
+        if (br.lt(0) || br.gt(bn))
+          return math.bignumber(0);
+        return bigFact(bn).div(bigFact(br).times(bigFact(bn.minus(br))));
+      },
+      nPr: (n, r) => {
+        const bn = math.bignumber(n);
+        const br = math.bignumber(r);
+        if (br.lt(0) || br.gt(bn))
+          return math.bignumber(0);
+        return bigFact(bn).div(bigFact(bn.minus(br)));
+      },
+      RanInt: (a, b) => Math.floor(Math.random() * (math.number(b) - math.number(a) + 1)) + math.number(a),
+      Ran: () => Math.random(),
+      Pol: (x, y) => {
+        const r = math.hypot(x, y);
+        const t = fromRad(baseAtan2(y, x));
+        return [r, t];
+      },
+      Rec: (r, t) => {
+        const rad = toRad(t);
+        return [math.multiply(r, baseCos(rad)), math.multiply(r, baseSin(rad))];
+      },
+      dms: (d, m, s) => {
+        const bd = math.bignumber(d);
+        const bm = math.bignumber(m);
+        const bs = math.bignumber(s);
+        const sign = math.smaller(bd, 0) ? math.bignumber(-1) : math.bignumber(1);
+        const absD = math.abs(bd);
+        const val = math.add(absD, math.add(math.divide(bm, 60), math.divide(bs, 3600)));
+        return math.multiply(sign, val);
+      }
+    }, { override: true });
+    this.registerDomListeners();
+    this.renderPreview();
+    window.addEventListener('resize', () => {
+      if (self.state.activeMode === 'GRAPH') {
+        if (self.state.graph.mode === '3D')
+          self.resize3D();
+        else
+          self.drawGraph();
+      }
+    });
+    self.DOM.graphCanvas.addEventListener('click', e => self.onGraphTap(e));
+    self.init3DControls();
+    document.addEventListener('input', e => {
+      if (e.target && e.target.id === 'graphFnInput')
+        self.updateGraphTex();
+    });
+  },
+  formatBigPrecision(res) {
+    if (math.isBigNumber(res)) {
+      if (res.abs().lt('1e-130'))
+        return '0';
+      const rounded = res.toSignificantDigits(120);
+      return math.format(rounded, { notation: 'auto', precision: 120, lowerExp: -120, upperExp: 125 });
+    }
+    if (typeof res === 'number') {
+      if (Math.abs(res) < 1e-14)
+        return '0';
+      return math.format(res, { notation: 'auto', precision: 15, lowerExp: -15, upperExp: 15 });
+    }
+    return res.toString();
+  },
+  registerDomListeners() {
+    const self = this;
+    self.DOM.closeModalBtn.addEventListener('click', () => self.closeLcdModal());
+    self.DOM.btnShift.addEventListener('click', () => self.toggleShift());
+    self.DOM.btnAlpha.addEventListener('click', () => self.toggleAlpha());
+    document.getElementById('btnMode').addEventListener('click', () => self.openModeMenu());
+    document.getElementById('btnOn').addEventListener('click', () => self.allClear());
+    document.getElementById('btnHist').addEventListener('click', () => self.openHistory());
+    document.getElementById('btnOptn').addEventListener('click', () => self.openContextMenu());
+    document.getElementById('btnTheme').addEventListener('click', () => self.toggleTheme());
+    document.getElementById('btnConv').addEventListener('click', () => self.openConvert());
+    document.getElementById('btnVarA').addEventListener('click', () => self.onVarPress('A'));
+    document.getElementById('btnVarB').addEventListener('click', () => self.onVarPress('B'));
+    document.getElementById('btnVarC').addEventListener('click', () => self.onVarPress('C'));
+    document.getElementById('fnFrac').addEventListener('click', () => self.handleKey('a/b'));
+    document.getElementById('fnSqrt').addEventListener('click', () => self.handleKey('sqrt'));
+    document.getElementById('fnPower2').addEventListener('click', () => self.handleKey('x2'));
+    document.getElementById('fnPowerY').addEventListener('click', () => self.handleKey('xy'));
+    document.getElementById('fnLog').addEventListener('click', () => self.handleKey('log'));
+    document.getElementById('fnLn').addEventListener('click', () => self.handleKey('ln'));
+    document.getElementById('fnNegate').addEventListener('click', () => self.handleKey('negate'));
+    document.getElementById('fnDms').addEventListener('click', () => self.handleKey('dms'));
+    document.getElementById('fnHyp').addEventListener('click', () => self.handleKey('hyp'));
+    document.getElementById('fnSin').addEventListener('click', () => self.handleKey('sin'));
+    document.getElementById('fnCos').addEventListener('click', () => self.handleKey('cos'));
+    document.getElementById('fnTan').addEventListener('click', () => self.handleKey('tan'));
+    document.getElementById('fnVarX').addEventListener('click', () => self.handleKey('X'));
+    document.getElementById('fnVarY').addEventListener('click', () => self.handleKey('Y'));
+    document.getElementById('fnOpenParen').addEventListener('click', () => self.handleKey('('));
+    document.getElementById('fnCloseParen').addEventListener('click', () => self.handleKey(')'));
+    document.getElementById('fnSdToggle').addEventListener('click', () => self.toggleFractionDecimal());
+    document.getElementById('fnMemPlus').addEventListener('click', () => self.handleKey('M'));
+    for (let i = 0; i <= 9; i++) {
+      document.getElementById(`num${i}`).addEventListener('click', () => self.insertAtCursor(String(i)));
+    }
+    document.getElementById('charDecimal').addEventListener('click', () => self.insertAtCursor('.'));
+    document.getElementById('opAdd').addEventListener('click', () => self.insertAtCursor('+'));
+    document.getElementById('opSub').addEventListener('click', () => self.insertAtCursor('-'));
+    document.getElementById('opMul').addEventListener('click', () => self.insertAtCursor('*'));
+    document.getElementById('opDiv').addEventListener('click', () => self.insertAtCursor('÷'));
+    document.getElementById('keyDel').addEventListener('click', () => self.backspace());
+    document.getElementById('keyAc').addEventListener('click', () => self.allClear());
+    document.getElementById('btnConst').addEventListener('click', () => self.handleKey('const'));
+    document.getElementById('btnAns').addEventListener('click', () => self.handleKey('ans'));
+    document.getElementById('keyEval').addEventListener('click', () => self.calculate());
+    document.getElementById('arrowUp').addEventListener('click', () => self.onArrow('up'));
+    document.getElementById('arrowDown').addEventListener('click', () => self.onArrow('down'));
+    document.getElementById('arrowLeft').addEventListener('click', () => self.onArrow('left'));
+    document.getElementById('arrowRight').addEventListener('click', () => self.onArrow('right'));
+  },
+  onArrow(dir) {
+    if (this.state.activeMode === 'GRAPH') {
+      if (this.state.graph.mode === '3D') {
+        if (this.state.shiftMode) {
+          this.zoomGraph(dir === 'up' ? 0.85 : dir === 'down' ? 1.18 : 1);
+          this.disableShiftAlpha();
+          return;
+        }
+        const g = this.state.graph;
+        if (dir === 'left')
+          g.rotZ -= 0.15;
+        else if (dir === 'right')
+          g.rotZ += 0.15;
+        else if (dir === 'up')
+          g.rotX = Math.max(0.01, g.rotX - 0.12);
+        else if (dir === 'down')
+          g.rotX = Math.min(Math.PI - 0.01, g.rotX + 0.12);
+        this.update3DCamera();
+        return;
+      }
+      if (this.state.shiftMode) {
+        this.zoomGraph(dir === 'up' ? 0.8 : dir === 'down' ? 1.25 : 1);
+        this.disableShiftAlpha();
+        return;
+      }
+      const map = { up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0] };
+      const [dx, dy] = map[dir];
+      this.panGraph(dx, dy);
+      return;
+    }
+    if (dir === 'up')
+      this.moveVertical(-1);
+    else if (dir === 'down')
+      this.moveVertical(1);
+    else if (dir === 'left')
+      this.moveCursor(-1);
+    else if (dir === 'right')
+      this.moveCursor(1);
+  },
+  showLcdModal(title, html) {
+    this.DOM.modalTitle.textContent = title;
+    this.DOM.modalBody.innerHTML = html;
+    this.DOM.lcdModal.classList.remove('hidden');
+  },
+  closeLcdModal() {
+    this.DOM.lcdModal.classList.add('hidden');
+  },
+  balanceParens(str) {
+    const open = (str.match(/\(/g) || []).length;
+    const close = (str.match(/\)/g) || []).length;
+    return str + ')'.repeat(Math.max(0, open - close));
+  },
+  escapeLatex(str) {
+    const map = {
+      '\\': '\\textbackslash{}', '{': '\\{', '}': '\\}', '$': '\\$',
+      '&': '\\&', '#': '\\#', '%': '\\%', '_': '\\_',
+      '^': '\\textasciicircum{}', '~': '\\textasciitilde{}'
+    };
+    return String(str).replace(/[\\{}$&#%_^~]/g, ch => map[ch]);
+  },
+  getFractionToken(num, den) {
+    return `[[${num}|${den}]]`;
+  },
+  renderFractionTex(num, den) {
+    const n = num ? this.renderTex(num) : '\\square';
+    const d = den ? this.renderTex(den) : '\\square';
+    return `\\frac{${n}}{${d}}`;
+  },
+  getRawExpression() {
+    if (!this.state.activeFrac)
+      return this.state.mainExpr;
+    return this.state.mainExpr.slice(0, this.state.mainCursor) +
+      this.getFractionToken(this.state.activeFrac.num, this.state.activeFrac.den) +
+      this.state.mainExpr.slice(this.state.mainCursor);
+  },
+  getPlainExpression(expr) {
+    return String(expr).replace(/\[\[(.*?)\|(.*?)\]\]/g, (_, num, den) => {
+      return `${this.getPlainExpression(num)}/${this.getPlainExpression(den)}`;
+    });
+  },
+  getEvalExpression(expr) {
+    let substituted = String(expr).replace(/Ans/g, `(${this.state.lastCalculatedAnswer})`).replace(/÷/g, '/');
+    return substituted.replace(/\[\[(.*?)\|(.*?)\]\]/g, (_, num, den) => {
+      return `(${this.getEvalExpression(num)})/(${this.getEvalExpression(den)})`;
+    });
+  },
+  addImplicitMultiplication(str) {
+    let s = str.trim();
+    if (!s)
+      return s;
+    s = s.replace(/Vct([A-C])\s*\*\s*Vct([A-C])/gi, 'dot(Vct$1,Vct$2)');
+    s = s.replace(/Vct([A-C])\s+Vct([A-C])/gi, 'dot(Vct$1,Vct$2)');
+    s = s.replace(/(\d)(?![eE][+-]?\d)([a-zA-Z_])/g, '$1*$2');
+    const funcs = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh',
+      'log10', 'log2', 'log', 'sqrt', 'cbrt', 'det', 'inv', 'transpose', 'cross', 'dot', 'norm', 'simplify',
+      'derivative', 'rationalize', 'MatA', 'MatB', 'MatC', 'VctA', 'VctB', 'VctC',
+      'gcd', 'lcm', 'random', 'abs', 'exp', 'pow', 'round', 'floor', 'ceil', 'factorial',
+      'combinations', 'permutations', 'nCr', 'nPr', 'Pol', 'Rec', 'RanInt', 'Ran', 're', 'im', 'conj', 'arg', 'dms'];
+    s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, (match, p1) => {
+      if (funcs.includes(p1)) {
+        return match;
+      }
+      return p1 + '*(';
+    });
+    s = s.replace(/\)\s*\(/g, ')*(');
+    s = s.replace(/\)\s*(\d)/g, ')*$1');
+    s = s.replace(/\)\s*([a-zA-Z_])/g, ')*$1');
+    s = s.replace(/(\d)\s*\(/g, '$1*(');
+    return s;
+  },
+  renderTex(expr) {
+    const self = this;
+    const map = Object.create(null);
+    let idx = 0;
+    let rawStr = String(expr);
+    if (rawStr.includes('÷')) {
+      return rawStr.split('÷').map(part => {
+        const trimmed = part.trim();
+        if (!trimmed)
+          return '\\square';
+        return self.renderTex(trimmed);
+      }).join(' \\div ');
+    }
+    let normalized = rawStr
+      .replace(/(\d+(?:\.\d+)?)[eE]([+-]?\d+)/g, (_, base, exp) => {
+      const cleanExp = exp.replace(/^\+/, '');
+      const key = `BIGLIT_${idx++}`;
+      map[key] = `${base} \\cdot 10^{${cleanExp}}`;
+      return key;
+    })
+      .replace(/\b\d{18,}(?:\.\d+)?\b/g, (match) => {
+      const key = `BIGLIT_${idx++}`;
+      map[key] = `\\text{${match}}`;
+      return key;
+    });
+    const source = normalized.replace(/\[\[(.*?)\|(.*?)\]\]/g, (_, num, den) => {
+      const key = `FRAC_${idx++}`;
+      map[key] = self.renderFractionTex(num, den);
+      return key;
+    });
+    try {
+      const node = math.parse(self.balanceParens(source));
+      return node.toTex({
+        handler: (node, options) => {
+          if (node.type === 'FunctionNode' && node.fn && node.fn.name) {
+            const inverse = { asin: '\\sin', acos: '\\cos', atan: '\\tan', asinh: '\\sinh', acosh: '\\cosh', atanh: '\\tanh' };
+            const base = inverse[node.fn.name];
+            if (base) {
+              const args = node.args.map(a => a.toTex(options)).join(',\\ ');
+              return base + '^{-1}\\left(' + args + '\\right)';
+            }
+          }
+          if (node.type === 'SymbolNode' && map[node.name]) {
+            return map[node.name];
+          }
+          return undefined;
+        }
+      });
+    }
+    catch (e) {
+      return '\\text{' + self.escapeLatex(self.getPlainExpression(expr)) + '}';
+    }
+  },
+  renderKatex(tex, el) {
+    katex.render(tex, el, { throwOnError: false });
+  },
+  renderPreview() {
+    this.DOM.smallResult.style.display = 'flex';
+    const raw = this.getRawExpression();
+    this.DOM.inputEl.value = this.getPlainExpression(raw);
+    if (!raw) {
+      this.DOM.bigDisplay.innerHTML = '<span class="opacity-35">0</span>';
+      this.DOM.smallResult.innerHTML = '';
+      return;
+    }
+    if (/^-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(raw)) {
+      const parts = raw.split(/[eE]/);
+      const cleanExp = parts.length === 2 ? parts[1].replace(/^\+/, '') : '';
+      const tex = parts.length === 2 ? `\\text{${parts[0]}} \\cdot 10^{${cleanExp}}` : `\\text{${parts[0]}}`;
+      this.renderKatex(tex, this.DOM.bigDisplay);
+      return;
+    }
+    this.renderKatex(this.renderTex(raw), this.DOM.bigDisplay);
+  },
+  getTokenSpans(expr) {
+    const spans = [];
+    const re = /\[\[(.*?)\|(.*?)\]\]/g;
+    let m;
+    while ((m = re.exec(expr))) {
+      spans.push({ start: m.index, end: m.index + m[0].length });
+    }
+    return spans;
+  },
+  stepMainCursor(pos, dir) {
+    const spans = this.getTokenSpans(this.state.mainExpr);
+    if (dir > 0) {
+      const span = spans.find(s => s.start === pos);
+      if (span)
+        return span.end;
+      return Math.min(this.state.mainExpr.length, pos + 1);
+    }
+    else {
+      const span = spans.find(s => s.end === pos);
+      if (span)
+        return span.start;
+      return Math.max(0, pos - 1);
+    }
+  },
+  startFraction() {
+    if (this.state.activeFrac)
+      return;
+    this.state.activeFrac = { num: '', den: '', part: 'num', pos: 0 };
+    this.renderPreview();
+  },
+  commitFraction() {
+    if (!this.state.activeFrac)
+      return;
+    const token = this.getFractionToken(this.state.activeFrac.num, this.state.activeFrac.den);
+    this.state.mainExpr = this.state.mainExpr.slice(0, this.state.mainCursor) + token + this.state.mainExpr.slice(this.state.mainCursor);
+    this.state.mainCursor += token.length;
+    this.state.activeFrac = null;
+  },
+  handleKey(action) {
+    const isShift = this.state.shiftMode;
+    const isAlpha = this.state.alphaMode;
+    this.disableShiftAlpha();
+    if (action === 'a/b') {
+      if (isShift) {
+        this.insertAtCursor('([[|]])', 4);
+      }
+      else {
+        this.startFraction();
+      }
+    }
+    else if (action === 'sqrt') {
+      if (isShift) {
+        this.insertAtCursor('cbrt()', 1);
+      }
+      else {
+        this.insertAtCursor('sqrt()', 1);
+      }
+    }
+    else if (action === 'x2') {
+      if (isShift) {
+        this.insertAtCursor('^3');
+      }
+      else {
+        this.insertAtCursor('^2');
+      }
+    }
+    else if (action === 'xy') {
+      this.insertAtCursor('^');
+    }
+    else if (action === 'log') {
+      if (isShift) {
+        this.insertAtCursor('10^');
+      }
+      else {
+        this.insertAtCursor('log10()', 1);
+      }
+    }
+    else if (action === 'ln') {
+      if (isShift) {
+        this.insertAtCursor('e^');
+      }
+      else {
+        this.insertAtCursor('log()', 1);
+      }
+    }
+    else if (action === 'negate') {
+      if (isAlpha) {
+        this.insertAtCursor('A');
+      }
+      else {
+        this.negate();
+      }
+    }
+    else if (action === 'dms') {
+      if (isShift) {
+        this.convertToDmsDisplay();
+      }
+      else if (isAlpha) {
+        this.insertAtCursor('B');
+      }
+      else {
+        this.insertAtCursor('°');
+      }
+    }
+    else if (action === 'hyp') {
+      if (isAlpha) {
+        this.insertAtCursor('C');
+      }
+      else {
+        this.openHypMenu();
+      }
+    }
+    else if (action === 'sin') {
+      if (isShift)
+        this.insertAtCursor('asin()', 1);
+      else if (isAlpha)
+        this.insertAtCursor('D');
+      else
+        this.insertAtCursor('sin()', 1);
+    }
+    else if (action === 'cos') {
+      if (isShift)
+        this.insertAtCursor('acos()', 1);
+      else if (isAlpha)
+        this.insertAtCursor('E');
+      else
+        this.insertAtCursor('cos()', 1);
+    }
+    else if (action === 'tan') {
+      if (isShift)
+        this.insertAtCursor('atan()', 1);
+      else if (isAlpha)
+        this.insertAtCursor('F');
+      else
+        this.insertAtCursor('tan()', 1);
+    }
+    else if (action === 'X') {
+      if (isAlpha) {
+        this.insertAtCursor('X');
+      }
+      else {
+        this.insertAtCursor('x');
+      }
+    }
+    else if (action === 'Y') {
+      if (isAlpha) {
+        this.insertAtCursor('Y');
+      }
+      else {
+        this.insertAtCursor('y');
+      }
+    }
+    else if (action === '(') {
+      if (isAlpha) {
+        this.insertAtCursor('M');
+      }
+      else {
+        this.insertAtCursor('(');
+      }
+    }
+    else if (action === ')') {
+      if (isShift) {
+        this.insertAtCursor('}');
+      }
+      else if (isAlpha) {
+        this.insertAtCursor('i');
+      }
+      else {
+        this.insertAtCursor(')');
+      }
+    }
+    else if (action === 'M') {
+      if (isShift) {
+        this.insertAtCursor(' - M');
+      }
+      else if (isAlpha) {
+        this.insertAtCursor('M');
+      }
+      else {
+        this.insertAtCursor(' + M');
+      }
+    }
+    else if (action === 'const') {
+      if (isShift) {
+        this.insertAtCursor('e');
+      }
+      else {
+        this.insertAtCursor('pi');
+      }
+    }
+    else if (action === 'ans') {
+      this.insertAtCursor('Ans');
+    }
+  },
+  insertAtCursor(text, cursorBack = 0) {
+    if (text === '()/()') {
+      this.startFraction();
+      return;
+    }
+    if (!text)
+      return;
+    if (this.state.activeFrac) {
+      const part = this.state.activeFrac.part;
+      const buf = this.state.activeFrac[part];
+      const pos = Math.max(0, Math.min(buf.length, this.state.activeFrac.pos));
+      this.state.activeFrac[part] = buf.slice(0, pos) + text + buf.slice(pos);
+      this.state.activeFrac.pos = pos + text.length - cursorBack;
+      if (this.state.activeFrac.pos < 0)
+        this.state.activeFrac.pos = 0;
+      if (this.state.activeFrac.pos > this.state.activeFrac[part].length) {
+        this.state.activeFrac.pos = this.state.activeFrac[part].length;
+      }
+    }
+    else {
+      this.state.mainExpr = this.state.mainExpr.slice(0, this.state.mainCursor) + text + this.state.mainExpr.slice(this.state.mainCursor);
+      this.state.mainCursor += text.length - cursorBack;
+      if (this.state.mainCursor < 0)
+        this.state.mainCursor = 0;
+      if (this.state.mainCursor > this.state.mainExpr.length)
+        this.state.mainCursor = this.state.mainExpr.length;
+    }
+    this.renderPreview();
+  },
+  moveCursor(delta) {
+    if (this.state.activeFrac) {
+      if (delta > 0) {
+        this.commitFraction();
+      }
+      else {
+        const part = this.state.activeFrac.part;
+        if (part === 'den') {
+          this.state.activeFrac.part = 'num';
+          this.state.activeFrac.pos = this.state.activeFrac.num.length;
+        }
+        else if (this.state.activeFrac.pos > 0) {
+          this.state.activeFrac.pos = Math.max(0, this.state.activeFrac.pos - 1);
+        }
+      }
+      this.renderPreview();
+      return;
+    }
+    this.state.mainCursor = this.stepMainCursor(this.state.mainCursor, delta > 0 ? 1 : -1);
+    this.renderPreview();
+  },
+  moveVertical(delta) {
+    if (!this.state.activeFrac)
+      return;
+    if (delta < 0) {
+      this.state.activeFrac.part = 'num';
+      this.state.activeFrac.pos = this.state.activeFrac.num.length;
+    }
+    else {
+      this.state.activeFrac.part = 'den';
+      this.state.activeFrac.pos = this.state.activeFrac.den.length;
+    }
+    this.renderPreview();
+  },
+  backspace() {
+    if (this.state.activeFrac) {
+      const part = this.state.activeFrac.part;
+      const buf = this.state.activeFrac[part];
+      if (this.state.activeFrac.pos > 0) {
+        this.state.activeFrac[part] = buf.slice(0, this.state.activeFrac.pos - 1) + buf.slice(this.state.activeFrac.pos);
+        this.state.activeFrac.pos -= 1;
+      }
+      else if (part === 'den') {
+        this.state.activeFrac.part = 'num';
+        this.state.activeFrac.pos = this.state.activeFrac.num.length;
+      }
+      else {
+        this.state.activeFrac = null;
+      }
+      this.renderPreview();
+      return;
+    }
+    if (this.state.mainCursor <= 0)
+      return;
+    const spans = this.getTokenSpans(this.state.mainExpr);
+    const span = spans.find(s => s.end === this.state.mainCursor);
+    if (span) {
+      this.state.mainExpr = this.state.mainExpr.slice(0, span.start) + this.state.mainExpr.slice(span.end);
+      this.state.mainCursor = span.start;
+    }
+    else {
+      this.state.mainExpr = this.state.mainExpr.slice(0, this.state.mainCursor - 1) + this.state.mainExpr.slice(this.state.mainCursor);
+      this.state.mainCursor -= 1;
+    }
+    this.renderPreview();
+  },
+  toggleShift() {
+    this.state.shiftMode = !this.state.shiftMode;
+    this.state.alphaMode = false;
+    this.updateStatusIndicators();
+  },
+  toggleAlpha() {
+    this.state.alphaMode = !this.state.alphaMode;
+    this.state.shiftMode = false;
+    this.updateStatusIndicators();
+  },
+  disableShiftAlpha() {
+    this.state.shiftMode = false;
+    this.state.alphaMode = false;
+    this.updateStatusIndicators();
+  },
+  updateStatusIndicators() {
+    this.DOM.indShift.style.opacity = this.state.shiftMode ? '1' : '0.15';
+    this.DOM.indAlpha.style.opacity = this.state.alphaMode ? '1' : '0.15';
+    if (this.state.shiftMode) {
+      this.DOM.btnShift.classList.add('bg-amber-600', 'text-slate-950');
+    }
+    else {
+      this.DOM.btnShift.classList.remove('bg-amber-600', 'text-slate-950');
+    }
+    if (this.state.alphaMode) {
+      this.DOM.btnAlpha.classList.add('bg-pink-600', 'text-slate-950');
+    }
+    else {
+      this.DOM.btnAlpha.classList.remove('bg-pink-600', 'text-slate-950');
+    }
+    this.DOM.btnConst.textContent = this.state.shiftMode ? "e" : "π";
+  },
+  negate() {
+    if (this.state.activeFrac) {
+      const part = this.state.activeFrac.part;
+      const buf = this.state.activeFrac[part];
+      if (buf.startsWith('-(') && buf.endsWith(')')) {
+        this.state.activeFrac[part] = buf.slice(2, -1);
+      }
+      else {
+        this.state.activeFrac[part] = '-(' + buf + ')';
+      }
+      this.state.activeFrac.pos = this.state.activeFrac[part].length;
+      this.renderPreview();
+      return;
+    }
+    if (!this.state.mainExpr)
+      return;
+    if (this.state.mainExpr.startsWith('-(') && this.state.mainExpr.endsWith(')')) {
+      this.state.mainExpr = this.state.mainExpr.slice(2, -1);
+      this.state.mainCursor = Math.max(0, this.state.mainCursor - 2);
+    }
+    else {
+      this.state.mainExpr = '-(' + this.state.mainExpr + ')';
+      this.state.mainCursor += 2;
+    }
+    this.renderPreview();
+  },
+  allClear() {
+    this.state.mainExpr = '';
+    this.state.mainCursor = 0;
+    this.state.activeFrac = null;
+    this.disableShiftAlpha();
+    this.renderPreview();
+  },
+  saveToHistory(expr, answer) {
+    if (!expr || answer === undefined || answer === null || answer === 'Error')
+      return;
+    this.state.history.push({ expression: expr, answer });
+    if (this.state.history.length > 30)
+      this.state.history.shift();
+  },
+  openHistory() {
+    if (this.state.history.length === 0) {
+      this.showLcdModal('HISTORY LOGS', '<p class="p-2 text-slate-800 font-bold">No history available.</p>');
+      return;
+    }
+    let html = '<div class="flex flex-col gap-2 p-1">';
+    this.state.history.slice().reverse().forEach((h, i) => {
+      let originalIndex = this.state.history.length - 1 - i;
+      html += `
+          <div class="bg-black/5 p-1.5 rounded cursor-pointer hover:bg-black/10 border border-transparent hover:border-slate-400" 
+               data-onclick="Calculator.restoreHistory(${originalIndex})">
+            <div class="text-[9px] text-slate-500 font-bold break-all">${h.expression}</div>
+            <div class="text-xs font-black text-right mt-1 text-slate-900 break-all">${h.answer}</div>
+          </div>
+        `;
+    });
+    html += '</div>';
+    this.showLcdModal('CALCULATION LOGS', html);
+  },
+  restoreHistory(idx) {
+    const h = this.state.history[idx];
+    this.state.mainExpr = h.answer;
+    this.state.mainCursor = this.state.mainExpr.length;
+    this.state.activeFrac = null;
+    this.closeLcdModal();
+    this.renderPreview();
+  },
+  openHypMenu() {
+    const html = `
+        <div class="grid grid-cols-2 gap-2 p-1 font-sans text-slate-900">
+          <button data-onclick="Calculator.insertAtCursor('sinh()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[11px] font-bold uppercase">sinh</button>
+          <button data-onclick="Calculator.insertAtCursor('cosh()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[11px] font-bold uppercase">cosh</button>
+          <button data-onclick="Calculator.insertAtCursor('tanh()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[11px] font-bold uppercase">tanh</button>
+          <button data-onclick="Calculator.insertAtCursor('asinh()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[11px] font-bold uppercase">sinh⁻¹</button>
+          <button data-onclick="Calculator.insertAtCursor('acosh()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[11px] font-bold uppercase">cosh⁻¹</button>
+          <button data-onclick="Calculator.insertAtCursor('atanh()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[11px] font-bold uppercase">tanh⁻¹</button>
+        </div>
+      `;
+    this.showLcdModal('HYPERBOLIC FUNCTIONS', html);
+  },
+  openContextMenu() {
+    let html = '';
+    if (this.state.activeMode === 'COMP') {
+      html = `
+          <div class="grid grid-cols-3 gap-1.5 p-1 font-sans text-slate-900">
+            <button data-onclick="Calculator.insertAtCursor('sinh()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">sinh</button>
+            <button data-onclick="Calculator.insertAtCursor('cosh()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">cosh</button>
+            <button data-onclick="Calculator.insertAtCursor('tanh()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">tanh</button>
+            <button data-onclick="Calculator.insertAtCursor('gcd(,)',2); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">gcd(a,b)</button>
+            <button data-onclick="Calculator.insertAtCursor('lcm(,)',2); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">lcm(a,b)</button>
+            <button data-onclick="Calculator.insertAtCursor('Ran()'); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">Ran#</button>
+            <button data-onclick="Calculator.insertAtCursor('nCr(,)',2); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">nCr</button>
+            <button data-onclick="Calculator.insertAtCursor('nPr(,)',2); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">nPr</button>
+            <button data-onclick="Calculator.insertAtCursor('!'); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">x!</button>
+            <button data-onclick="Calculator.insertAtCursor('Pol(,)',2); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">Pol(x,y)</button>
+            <button data-onclick="Calculator.insertAtCursor('Rec(,)',2); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">Rec(r,θ)</button>
+            <button data-onclick="Calculator.insertAtCursor('RanInt(,)',2); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">RanInt#</button>
+            <button data-onclick="Calculator.insertAtCursor('re()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">Re</button>
+            <button data-onclick="Calculator.insertAtCursor('im()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">Im</button>
+            <button data-onclick="Calculator.insertAtCursor('conj()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[9px] font-bold uppercase">Conj</button>
+            <button data-onclick="Calculator.openIntegralSolver()" class="col-span-1 bg-[#1c1f26] text-white hover:bg-[#2d323e] py-1.5 rounded text-[9px] font-bold uppercase">∫ f(x)dx</button>
+            <button data-onclick="Calculator.openNumericDerivative()" class="col-span-1 bg-[#1c1f26] text-white hover:bg-[#2d323e] py-1.5 rounded text-[9px] font-bold uppercase">d/dx at a</button>
+            <button data-onclick="Calculator.openSummationSolver()" class="col-span-1 bg-[#1c1f26] text-white hover:bg-[#2d323e] py-1.5 rounded text-[9px] font-bold uppercase">Σ f(x)</button>
+          </div>
+        `;
+    }
+    else if (this.state.activeMode === 'STAT') {
+      html = `
+          <div class="grid grid-cols-1 gap-2 p-1 font-sans text-slate-900">
+            <button data-onclick="Calculator.openStatConfig()" class="w-full text-left p-1.5 rounded border border-slate-400 hover:bg-slate-300">
+              <span class="font-bold block text-xs">Enter Data List</span>
+              <span class="text-[9px] opacity-75">comma separated values, then Compute</span>
+            </button>
+          </div>
+        `;
+    }
+    else if (this.state.activeMode === 'BASE') {
+      html = `
+          <div class="grid grid-cols-1 gap-2 p-1 font-sans text-slate-900">
+            <p class="text-[10px] font-bold px-1">Type an integer on the keypad and press = to convert.</p>
+          </div>
+        `;
+    }
+    else if (this.state.activeMode === 'GRAPH') {
+      const is3d = this.state.graph.mode === '3D';
+      html = `
+          <div class="grid grid-cols-2 gap-1.5 p-1 font-sans text-slate-900">
+            <button data-onclick="Calculator.setGraphDimension('2D')" class="${!is3d ? 'bg-slate-900 text-white' : 'bg-black/10'} py-1.5 rounded text-[10px] font-black uppercase">2D Plot (Y1-Y4)</button>
+            <button data-onclick="Calculator.setGraphDimension('3D')" class="${is3d ? 'bg-slate-900 text-white' : 'bg-black/10'} py-1.5 rounded text-[10px] font-black uppercase">3D Surface Z(x,y)</button>
+            ${is3d ? `
+              <button data-onclick="Calculator.setGraphFunc('z1')" class="col-span-2 bg-[#1c1f26] text-white hover:bg-[#2d323e] py-1.5 rounded text-[10px] font-bold uppercase">Z(x,y) = Function</button>
+              <button data-onclick="Calculator.openSphereConfig()" class="col-span-2 bg-teal-800 text-white hover:bg-teal-700 py-1.5 rounded text-[10px] font-bold uppercase">Full 3D Sphere (x²+y²+z²=r²)</button>
+              <button data-onclick="Calculator.openVWindow()" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">3D Bounds</button>
+              <button data-onclick="Calculator.resetGraphView(); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">Reset 3D</button>
+              <button data-onclick="Calculator.openGraphVars()" class="col-span-2 bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">Variables</button>
+            ` : `
+              <button data-onclick="Calculator.setGraphFunc('y1')" class="bg-[#1d4ed8] text-white py-1.5 rounded text-[10px] font-bold uppercase">Y1 (Blue)</button>
+              <button data-onclick="Calculator.setGraphFunc('y2')" class="bg-[#be123c] text-white py-1.5 rounded text-[10px] font-bold uppercase">Y2 (Crimson)</button>
+              <button data-onclick="Calculator.setGraphFunc('y3')" class="bg-[#047857] text-white py-1.5 rounded text-[10px] font-bold uppercase">Y3 (Emerald)</button>
+              <button data-onclick="Calculator.setGraphFunc('y4')" class="bg-[#7e22ce] text-white py-1.5 rounded text-[10px] font-bold uppercase">Y4 (Violet)</button>
+              <button data-onclick="Calculator.openVWindow()" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">V-Window</button>
+              <button data-onclick="Calculator.openGSolveMenu()" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">G-Solve</button>
+              <button data-onclick="Calculator.toggleGraphBg()" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">BG: ${this.state.graph.bg === 'light' ? 'White' : 'Black'}</button>
+              <button data-onclick="Calculator.openGraphVars()" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">Variables</button>
+            `}
+            <button data-onclick="Calculator.zoomGraph(0.75); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">Zoom In</button>
+            <button data-onclick="Calculator.zoomGraph(1.35); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">Zoom Out</button>
+          </div>
+        `;
+    }
+    else if (this.state.activeMode === 'MATRIX') {
+      html = `
+          <div class="grid grid-cols-2 gap-2 p-1 font-sans text-slate-900">
+            <button data-onclick="Calculator.insertAtCursor('det()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">det(A)</button>
+            <button data-onclick="Calculator.insertAtCursor('inv()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">inv(A)</button>
+            <button data-onclick="Calculator.insertAtCursor('transpose()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">transpose</button>
+            <button data-onclick="Calculator.insertAtCursor('MatA'); Calculator.closeLcdModal();" class="bg-slate-800 text-white hover:bg-slate-700 py-1.5 rounded text-[10px] font-bold uppercase">Insert MatA</button>
+            <button data-onclick="Calculator.insertAtCursor('MatB'); Calculator.closeLcdModal();" class="bg-slate-800 text-white hover:bg-slate-700 py-1.5 rounded text-[10px] font-bold uppercase">Insert MatB</button>
+            <button data-onclick="Calculator.insertAtCursor('MatC'); Calculator.closeLcdModal();" class="bg-slate-800 text-white hover:bg-slate-700 py-1.5 rounded text-[10px] font-bold uppercase">Insert MatC</button>
+            <button data-onclick="Calculator.openMatrixConfig('A')" class="col-span-2 border border-slate-600 border-dashed py-1.5 rounded text-[10px] font-extrabold uppercase mt-1">Config Matrix Data</button>
+          </div>
+        `;
+    }
+    else if (this.state.activeMode === 'VECTOR') {
+      html = `
+          <div class="grid grid-cols-2 gap-2 p-1 font-sans text-slate-900">
+            <button data-onclick="Calculator.insertAtCursor('dot(VctA,VctB)'); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">dot(A,B)</button>
+            <button data-onclick="Calculator.insertAtCursor('cross(VctA,VctB)'); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">cross(A,B)</button>
+            <button data-onclick="Calculator.insertAtCursor('norm()',1); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-1.5 rounded text-[10px] font-bold uppercase">norm (mag)</button>
+            <button data-onclick="Calculator.insertAtCursor('VctA'); Calculator.closeLcdModal();" class="bg-slate-800 text-white hover:bg-slate-700 py-1.5 rounded text-[10px] font-bold uppercase">Insert VctA</button>
+            <button data-onclick="Calculator.insertAtCursor('VctB'); Calculator.closeLcdModal();" class="bg-slate-800 text-white hover:bg-slate-700 py-1.5 rounded text-[10px] font-bold uppercase">Insert VctB</button>
+            <button data-onclick="Calculator.insertAtCursor('VctC'); Calculator.closeLcdModal();" class="bg-slate-800 text-white hover:bg-slate-700 py-1.5 rounded text-[10px] font-bold uppercase">Insert VctC</button>
+            <button data-onclick="Calculator.openVectorConfig('A')" class="col-span-2 border border-slate-600 border-dashed py-1.5 rounded text-[10px] font-extrabold uppercase mt-1">Config Vector Data</button>
+          </div>
+        `;
+    }
+    else if (this.state.activeMode === 'ALGEBRA') {
+      html = `
+          <div class="grid grid-cols-2 gap-2 p-1 font-sans text-slate-900">
+            <button data-onclick="Calculator.performAlgebra('simplify')" class="bg-[#1c1f26] text-white hover:bg-[#2d323e] py-2 rounded text-[10px] font-bold uppercase">Simplify (＝)</button>
+            <button data-onclick="Calculator.performAlgebra('derivative')" class="bg-[#1c1f26] text-white hover:bg-[#2d323e] py-2 rounded text-[10px] font-bold uppercase">d/dx</button>
+            <button data-onclick="Calculator.performAlgebra('rationalize')" class="bg-[#1c1f26] text-white hover:bg-[#2d323e] py-2 rounded text-[10px] font-bold uppercase">Rationalize</button>
+            <button data-onclick="Calculator.insertAtCursor('x'); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[11px] font-extrabold text-pink-700">Variable x</button>
+            <button data-onclick="Calculator.insertAtCursor('y'); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[11px] font-extrabold text-pink-700">Variable y</button>
+            <button data-onclick="Calculator.insertAtCursor('^2'); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[10px] font-bold uppercase">Power of ²</button>
+          </div>
+        `;
+    }
+    else if (this.state.activeMode === 'EQN') {
+      html = `
+          <div class="grid grid-cols-1 gap-2 p-1 font-sans text-slate-900">
+            <button data-onclick="Calculator.setupSimultaneous(2)" class="w-full text-left p-1.5 rounded border border-slate-400 hover:bg-slate-300">
+              <span class="font-bold block text-xs">1: Simultaneous 2 Unknowns</span>
+              <span class="text-[9px] opacity-75">a_n x + b_n y = c_n</span>
+            </button>
+            <button data-onclick="Calculator.setupSimultaneous(3)" class="w-full text-left p-1.5 rounded border border-slate-400 hover:bg-slate-300">
+              <span class="font-bold block text-xs">2: Simultaneous 3 Unknowns</span>
+              <span class="text-[9px] opacity-75">a_n x + b_n y + c_n z = d_n</span>
+            </button>
+            <button data-onclick="Calculator.setupPolynomial(2)" class="w-full text-left p-1.5 rounded border border-slate-400 hover:bg-slate-300">
+              <span class="font-bold block text-xs">3: Quadratic Polynomial</span>
+              <span class="text-[9px] opacity-75">ax² + bx + c = 0</span>
+            </button>
+            <button data-onclick="Calculator.setupPolynomial(3)" class="w-full text-left p-1.5 rounded border border-slate-400 hover:bg-slate-300">
+              <span class="font-bold block text-xs">4: Cubic Polynomial</span>
+              <span class="text-[9px] opacity-75">ax³ + bx² + cx + d = 0</span>
+            </button>
+          </div>
+        `;
+    }
+    else if (this.state.activeMode === 'INEQUALITY') {
+      html = `
+          <div class="grid grid-cols-2 gap-2 p-1 font-sans text-slate-900">
+            <button data-onclick="Calculator.openInequalityMenu()" class="col-span-2 bg-[#1c1f26] text-white py-1.5 rounded text-[10px] font-bold uppercase mb-1">Open Inequality Solver</button>
+            <button data-onclick="Calculator.insertAtCursor('>'); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[12px] font-bold">&gt;</button>
+            <button data-onclick="Calculator.insertAtCursor('<'); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[12px] font-bold">&lt;</button>
+            <button data-onclick="Calculator.insertAtCursor('>='); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[12px] font-bold">&ge;</button>
+            <button data-onclick="Calculator.insertAtCursor('<='); Calculator.closeLcdModal();" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[12px] font-bold">&le;</button>
+          </div>
+        `;
+    }
+    this.showLcdModal(`${this.state.activeMode} OPERATIONS`, html);
+  },
+  onVarPress(label) {
+    const isShift = this.state.shiftMode;
+    const isAlpha = this.state.alphaMode;
+    this.disableShiftAlpha();
+    if (this.state.activeMode === 'MATRIX') {
+      if (isShift) {
+        this.openMatrixConfig(label);
+      }
+      else if (isAlpha) {
+        this.insertAtCursor(label);
+      }
+      else {
+        this.insertAtCursor('Mat' + label);
+      }
+    }
+    else if (this.state.activeMode === 'VECTOR') {
+      if (isShift) {
+        this.openVectorConfig(label);
+      }
+      else if (isAlpha) {
+        this.insertAtCursor(label);
+      }
+      else {
+        this.insertAtCursor('Vct' + label);
+      }
+    }
+    else {
+      if (isShift) {
+        this.openVariableMemoryConfig(label);
+      }
+      else {
+        this.insertAtCursor(label);
+      }
+    }
+  },
+  openVariableMemoryConfig(label) {
+    const currentVal = this.memory[label] !== undefined ? this.memory[label] : 0;
+    const html = `
+        <div class="flex flex-col gap-2 p-1 text-slate-900 font-sans">
+          <div class="bg-black/5 p-2 rounded">
+            <span class="font-extrabold text-[11px] block">Variable ${label} Value:</span>
+            <span class="font-mono text-xs block font-bold mt-1 text-teal-950 break-all">${currentVal}</span>
+          </div>
+          <div class="flex gap-2">
+            <button data-onclick="Calculator.storeVariableValue('${label}')" class="flex-1 bg-slate-800 text-white font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">Store (Ans)</button>
+            <button data-onclick="Calculator.insertAtCursor('${label}'); Calculator.closeLcdModal();" class="flex-1 bg-black/10 hover:bg-black/25 font-bold py-1.5 rounded text-[10px] uppercase">Recall / Insert</button>
+          </div>
+        </div>
+      `;
+    this.showLcdModal(`Variable ${label} Memory`, html);
+  },
+  storeVariableValue(label) {
+    this.memory[label] = this.state.lastCalculatedAnswer || '0';
+    this.closeLcdModal();
+    this.DOM.smallResult.innerHTML = `<span class="text-xs text-emerald-950 font-bold uppercase">Stored Ans to Var ${label}</span>`;
+  },
+  openMatrixConfig(label) {
+    const self = this;
+    const dim = self.matrixDims[label] || [2, 2];
+    let html = `
+        <div class="flex flex-col gap-2 p-1 text-slate-900 font-sans">
+          <div class="flex justify-between items-center bg-black/5 p-1 rounded">
+            <span class="font-extrabold text-[10px]">Matrix ${label} Dimensions:</span>
+            <div class="flex gap-1">
+              <select id="matRows" class="bg-white border rounded px-1 py-0.5 text-[10px] font-bold text-slate-800">
+                <option value="2" ${dim[0] === 2 ? 'selected' : ''}>2 Rows</option>
+                <option value="3" ${dim[0] === 3 ? 'selected' : ''}>3 Rows</option>
+              </select>
+              <span class="text-[10px] font-bold self-center">×</span>
+              <select id="matCols" class="bg-white border rounded px-1 py-0.5 text-[10px] font-bold text-slate-800">
+                <option value="2" ${dim[1] === 2 ? 'selected' : ''}>2 Cols</option>
+                <option value="3" ${dim[1] === 3 ? 'selected' : ''}>3 Cols</option>
+              </select>
+            </div>
+          </div>
+          <div class="bg-black/5 p-1 rounded">
+            <span class="text-[9px] font-bold block mb-1">Enter Values:</span>
+            <div id="matrixInputGrid" class="grid gap-1"></div>
+          </div>
+          <button data-onclick="Calculator.saveMatrixData('${label}')" 
+                  class="mt-1 w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">
+            Save Mat${label}
+          </button>
+        </div>
+      `;
+    self.showLcdModal(`Setup Matrix ${label}`, html);
+    self.updateMatrixGrid(label);
+    document.getElementById('matRows').onchange = () => self.updateMatrixGrid(label);
+    document.getElementById('matCols').onchange = () => self.updateMatrixGrid(label);
+  },
+  updateMatrixGrid(label) {
+    const rows = parseInt(document.getElementById('matRows').value);
+    const cols = parseInt(document.getElementById('matCols').value);
+    const gridDiv = document.getElementById('matrixInputGrid');
+    gridDiv.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+    let html = '';
+    const currentMat = this.matrices[label];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        let val = 0;
+        if (currentMat && currentMat[r] && currentMat[r][c] !== undefined) {
+          val = currentMat[r][c];
+        }
+        html += `
+            <input type="number" id="mCell_${r}_${c}" value="${val}" step="any"
+                   class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+          `;
+      }
+    }
+    gridDiv.innerHTML = html;
+  },
+  saveMatrixData(label) {
+    const rows = parseInt(document.getElementById('matRows').value);
+    const cols = parseInt(document.getElementById('matCols').value);
+    const newMat = [];
+    for (let r = 0; r < rows; r++) {
+      const rowArr = [];
+      for (let c = 0; c < cols; c++) {
+        const val = parseFloat(document.getElementById(`mCell_${r}_${c}`).value) || 0;
+        rowArr.push(val);
+      }
+      newMat.push(rowArr);
+    }
+    this.matrices[label] = newMat;
+    this.matrixDims[label] = [rows, cols];
+    this.closeLcdModal();
+    this.renderKatex(`Mat${label} = ` + math.parse(JSON.stringify(newMat)).toTex(), this.DOM.bigDisplay);
+    this.DOM.smallResult.innerHTML = `<span class="text-xs text-emerald-950 font-bold uppercase">Saved Matrix ${label}</span>`;
+  },
+  openVectorConfig(label) {
+    const self = this;
+    const currentDim = self.vectorDims[label] || 3;
+    let html = `
+        <div class="flex flex-col gap-2 p-1 text-slate-900 font-sans">
+          <div class="flex justify-between items-center bg-black/5 p-1 rounded">
+            <span class="font-extrabold text-[10px]">Vector ${label} Size:</span>
+            <select id="vctSize" class="bg-white border rounded px-1 py-0.5 text-[10px] font-bold text-slate-800">
+              <option value="2" ${currentDim === 2 ? 'selected' : ''}>2 Dimensions</option>
+              <option value="3" ${currentDim === 3 ? 'selected' : ''}>3 Dimensions</option>
+            </select>
+          </div>
+          <div class="bg-black/5 p-1 rounded">
+            <span class="text-[9px] font-bold block mb-1">Enter Elements:</span>
+            <div id="vectorInputGrid" class="grid gap-2"></div>
+          </div>
+          <button data-onclick="Calculator.saveVectorData('${label}')" 
+                  class="mt-1 w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">
+            Save Vct${label}
+          </button>
+        </div>
+      `;
+    self.showLcdModal(`Setup Vector ${label}`, html);
+    self.updateVectorGrid(label);
+    document.getElementById('vctSize').onchange = () => self.updateVectorGrid(label);
+  },
+  updateVectorGrid(label) {
+    const size = parseInt(document.getElementById('vctSize').value);
+    const gridDiv = document.getElementById('vectorInputGrid');
+    gridDiv.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+    let html = '';
+    const currentVec = this.vectors[label];
+    for (let i = 0; i < size; i++) {
+      const val = (currentVec && currentVec[i] !== undefined) ? currentVec[i] : 0;
+      html += `
+          <div class="flex flex-col">
+            <span class="text-[8px] text-slate-600 font-bold text-center uppercase">${['X', 'Y', 'Z'][i]} Component</span>
+            <input type="number" id="vCell_${i}" value="${val}" step="any"
+                   class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+          </div>
+        `;
+    }
+    gridDiv.innerHTML = html;
+  },
+  saveVectorData(label) {
+    const size = parseInt(document.getElementById('vctSize').value);
+    const newVec = [];
+    for (let i = 0; i < size; i++) {
+      const val = parseFloat(document.getElementById(`vCell_${i}`).value) || 0;
+      newVec.push(val);
+    }
+    this.vectors[label] = newVec;
+    this.vectorDims[label] = size;
+    this.closeLcdModal();
+    this.renderKatex(`Vct${label} = ` + math.parse(JSON.stringify(newVec)).toTex(), this.DOM.bigDisplay);
+    this.DOM.smallResult.innerHTML = `<span class="text-xs text-emerald-950 font-bold uppercase">Saved Vector ${label}</span>`;
+  },
+  openModeMenu() {
+    let modeHtml = `
+        <div class="grid grid-cols-3 gap-1.5 p-1 text-slate-900 font-sans">
+          <button data-onclick="Calculator.setCalcMode('COMP')" class="flex flex-col items-center justify-center p-1.5 rounded border border-slate-400 hover:bg-slate-300 transition ${this.state.activeMode === 'COMP' ? 'bg-slate-800 text-white' : ''}">
+            <span class="font-extrabold text-[10px]">1: COMP</span>
+            <span class="text-[7px] opacity-75">Standard Math</span>
+          </button>
+          <button data-onclick="Calculator.setCalcMode('MATRIX')" class="flex flex-col items-center justify-center p-1.5 rounded border border-slate-400 hover:bg-slate-300 transition ${this.state.activeMode === 'MATRIX' ? 'bg-slate-800 text-white' : ''}">
+            <span class="font-extrabold text-[10px]">2: MATRIX</span>
+            <span class="text-[7px] opacity-75">MatA/MatB</span>
+          </button>
+          <button data-onclick="Calculator.setCalcMode('VECTOR')" class="flex flex-col items-center justify-center p-1.5 rounded border border-slate-400 hover:bg-slate-300 transition ${this.state.activeMode === 'VECTOR' ? 'bg-slate-800 text-white' : ''}">
+            <span class="font-extrabold text-[10px]">3: VECTOR</span>
+            <span class="text-[7px] opacity-75">Dot & Cross</span>
+          </button>
+          <button data-onclick="Calculator.setCalcMode('EQN')" class="flex flex-col items-center justify-center p-1.5 rounded border border-slate-400 hover:bg-slate-300 transition ${this.state.activeMode === 'EQN' ? 'bg-slate-800 text-white' : ''}">
+            <span class="font-extrabold text-[10px]">4: EQN</span>
+            <span class="text-[7px] opacity-75">Linear/Poly</span>
+          </button>
+          <button data-onclick="Calculator.setCalcMode('ALGEBRA')" class="flex flex-col items-center justify-center p-1.5 rounded border border-slate-400 hover:bg-slate-300 transition ${this.state.activeMode === 'ALGEBRA' ? 'bg-slate-800 text-white' : ''}">
+            <span class="font-extrabold text-[10px]">5: ALGEBRA</span>
+            <span class="text-[7px] opacity-75">Symbolic (＝)</span>
+          </button>
+          <button data-onclick="Calculator.setCalcMode('INEQUALITY')" class="flex flex-col items-center justify-center p-1.5 rounded border border-slate-400 hover:bg-slate-300 transition ${this.state.activeMode === 'INEQUALITY' ? 'bg-slate-800 text-white' : ''}">
+            <span class="font-extrabold text-[10px]">6: INEQ</span>
+            <span class="text-[7px] opacity-75">Lin/Quad</span>
+          </button>
+          <button data-onclick="Calculator.setCalcMode('STAT')" class="flex flex-col items-center justify-center p-1.5 rounded border border-slate-400 hover:bg-slate-300 transition ${this.state.activeMode === 'STAT' ? 'bg-slate-800 text-white' : ''}">
+            <span class="font-extrabold text-[10px]">7: STAT</span>
+            <span class="text-[7px] opacity-75">1-Var Stats</span>
+          </button>
+          <button data-onclick="Calculator.setCalcMode('BASE')" class="flex flex-col items-center justify-center p-1.5 rounded border border-slate-400 hover:bg-slate-300 transition ${this.state.activeMode === 'BASE' ? 'bg-slate-800 text-white' : ''}">
+            <span class="font-extrabold text-[10px]">8: BASE-N</span>
+            <span class="text-[7px] opacity-75">Dec/Hex/Oct/Bin</span>
+          </button>
+          <button data-onclick="Calculator.setCalcMode('GRAPH')" class="flex flex-col items-center justify-center p-1.5 rounded border border-slate-400 hover:bg-slate-300 transition ${this.state.activeMode === 'GRAPH' ? 'bg-slate-800 text-white' : ''}">
+            <span class="font-extrabold text-[10px]">9: GRAPH</span>
+            <span class="text-[7px] opacity-75">Y1/Y2/3D</span>
+          </button>
+        </div>
+        <div class="mt-2.5 border-t border-slate-700/30 pt-2 flex justify-between items-center text-slate-900 font-sans">
+          <span class="text-[10px] font-bold">ANGLE CONFIG:</span>
+          <div class="flex gap-2">
+            <button data-onclick="Calculator.setAngleUnit(true)" class="px-2 py-0.5 rounded text-[9px] font-bold border ${this.state.isDegree ? 'bg-slate-800 text-white' : 'border-slate-400'}">DEG</button>
+            <button data-onclick="Calculator.setAngleUnit(false)" class="px-2 py-0.5 rounded text-[9px] font-bold border ${!this.state.isDegree ? 'bg-slate-800 text-white' : 'border-slate-400'}">RAD</button>
+          </div>
+        </div>
+      `;
+    this.showLcdModal('SETUP / OPERATION MODES', modeHtml);
+  },
+  setAngleUnit(toDegree) {
+    this.state.isDegree = toDegree;
+    this.DOM.indAngle.textContent = this.state.isDegree ? 'D' : 'R';
+    this.closeLcdModal();
+    this.renderPreview();
+  },
+  setCalcMode(modeName) {
+    const prevMode = this.state.activeMode;
+    this.state.activeMode = modeName;
+    this.DOM.indMode.textContent = modeName;
+    this.closeLcdModal();
+    this.allClear();
+    if (prevMode === 'GRAPH' && modeName !== 'GRAPH')
+      this.exitGraphMode();
+    if (modeName === 'GRAPH')
+      this.enterGraphMode();
+    if (modeName === 'STAT') {
+      this.showLcdModal('STAT MODE ACTIVE', `
+          <div class="p-1 text-slate-900 text-[10px] font-sans">
+            <p class="font-bold">1-Variable Statistics:</p>
+            <p class="mt-1">Press <span class="bg-black/10 px-1 rounded font-mono font-bold">OPTN</span> to enter a data list and compute n, Σx, Σx², mean, and standard deviation.</p>
+          </div>
+        `);
+    }
+    else if (modeName === 'BASE') {
+      this.showLcdModal('BASE-N MODE ACTIVE', `
+          <div class="p-1 text-slate-900 text-[10px] font-sans">
+            <p class="font-bold">Decimal / Hex / Octal / Binary:</p>
+            <p class="mt-1">Type an integer and press <span class="bg-black/10 px-1 rounded font-mono font-bold">=</span> to see it in all four bases.</p>
+          </div>
+        `);
+    }
+    else if (modeName === 'GRAPH') {
+      this.showLcdModal('GRAPH ENGINE ACTIVE', `
+          <div class="p-1 text-slate-900 text-[10px] font-sans">
+            <p class="font-bold">2D Multi-Color &amp; 3D Surface Engine:</p>
+            <ul class="list-disc pl-4 mt-1 font-semibold leading-tight">
+              <li>Press <span class="bg-black/10 px-1 rounded font-mono font-bold">OPTN</span> to switch 2D (Y1-Y4), 3D Z(x,y), or 3D Sphere</li>
+              <li>2D: Tap to trace, D-pad pans, SHIFT+D-pad zooms</li>
+              <li>3D: Drag or use D-pad to orbit surface</li>
+            </ul>
+          </div>
+        `);
+    }
+    else if (modeName === 'MATRIX') {
+      this.showLcdModal('MATRIX MODE ACTIVE', `
+          <div class="p-1 text-slate-900 text-[10px] font-sans">
+            <p class="font-bold">Matrix Operations Setup:</p>
+            <p class="mt-1">Define and customize matrix data:</p>
+            <ul class="list-disc pl-4 mt-1 font-semibold leading-tight">
+              <li>Press <span class="bg-black/10 px-1 rounded font-mono font-bold">VAR A</span> for <b>MatA</b></li>
+              <li>Press <span class="bg-black/10 px-1 rounded font-mono font-bold">VAR B</span> for <b>MatB</b></li>
+              <li>Press <span class="bg-black/10 px-1 rounded font-mono font-bold">OPTN</span> to select matrix operations (det, inv, transpose...)</li>
+            </ul>
+          </div>
+        `);
+    }
+    else if (this.state.activeMode === 'VECTOR') {
+      this.showLcdModal('VECTOR MODE ACTIVE', `
+          <div class="p-1 text-slate-900 text-[10px] font-sans">
+            <p class="font-bold">Vector Operations Setup:</p>
+            <p class="mt-1">Edit custom vectors easily:</p>
+            <ul class="list-disc pl-4 mt-1 font-semibold leading-tight">
+              <li>Press <span class="bg-black/10 px-1 rounded font-mono font-bold">VAR A</span> for <b>VctA</b></li>
+              <li>Press <span class="bg-black/10 px-1 rounded font-mono font-bold">VAR B</span> for <b>VctB</b></li>
+              <li>Use <span class="bg-black/10 px-1 rounded font-mono font-bold">OPTN</span> to execute vector products, magnitudes, and norms</li>
+            </ul>
+          </div>
+        `);
+    }
+    else if (modeName === 'EQN') {
+      this.openContextMenu();
+    }
+    else if (modeName === 'ALGEBRA') {
+      this.showLcdModal('ALGEBRA MODE ACTIVE', `
+          <div class="p-1 text-slate-900 text-[10px] font-sans">
+            <p class="font-bold">Symbolic Solver Activated:</p>
+            <p class="mt-1">Input expressions like <code class="font-bold">x + 2x + 4x^2</code> using variables.</p>
+            <p class="mt-1.5 font-bold text-slate-800">⭐ Pressing "=" automatically runs symbolic simplify on expressions!</p>
+            <p class="mt-1">Select <span class="bg-black/10 px-1 rounded font-mono font-bold">OPTN</span> to derivative or simplify.</p>
+          </div>
+        `);
+    }
+    else if (modeName === 'INEQUALITY') {
+      this.openInequalityMenu();
+    }
+  },
+  setupSimultaneous(vars) {
+    let gridRowsHtml = '';
+    const letters = ['a', 'b', 'c', 'd'];
+    const count = vars === 2 ? 2 : 3;
+    for (let r = 1; r <= count; r++) {
+      gridRowsHtml += `<div class="flex items-center gap-1">`;
+      gridRowsHtml += `<span class="text-[9px] font-bold w-4 text-slate-700">Eq${r}:</span>`;
+      for (let c = 0; c <= vars; c++) {
+        const coefLetter = letters[c];
+        gridRowsHtml += `
+            <input type="number" id="sim_${r}_${c}" placeholder="${coefLetter}${r}" step="any"
+                   class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+          `;
+      }
+      gridRowsHtml += `</div>`;
+    }
+    let html = `
+        <div class="flex flex-col gap-1.5 p-1 text-slate-900 font-sans">
+          <div class="bg-black/5 p-1.5 rounded">
+            <span class="text-[9px] font-bold block mb-1">Enter Coefficients:</span>
+            <div class="flex flex-col gap-1.5">
+              ${gridRowsHtml}
+            </div>
+          </div>
+          <button data-onclick="Calculator.solveSimultaneous(${vars})" 
+                  class="mt-1 w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">
+            Solve System
+          </button>
+        </div>
+      `;
+    this.showLcdModal(`Simultaneous Solver (${vars} Unknowns)`, html);
+  },
+  solveSimultaneous(vars) {
+    try {
+      if (vars === 2) {
+        const a1 = parseFloat(document.getElementById('sim_1_0').value) || 0;
+        const b1 = parseFloat(document.getElementById('sim_1_1').value) || 0;
+        const c1 = parseFloat(document.getElementById('sim_1_2').value) || 0;
+        const a2 = parseFloat(document.getElementById('sim_2_0').value) || 0;
+        const b2 = parseFloat(document.getElementById('sim_2_1').value) || 0;
+        const c2 = parseFloat(document.getElementById('sim_2_2').value) || 0;
+        const det = a1 * b2 - b1 * a2;
+        if (Math.abs(det) < 1e-12) {
+          this.showLcdModal('Result', '<div class="p-2 text-rose-700 font-bold">No Unique Solution (Determinant = 0)</div>');
+          return;
+        }
+        const x = (c1 * b2 - b1 * c2) / det;
+        const y = (a1 * c2 - c1 * a2) / det;
+        this.closeLcdModal();
+        this.renderKatex(`x = ${math.round(x, 6)},\\ y = ${math.round(y, 6)}`, this.DOM.bigDisplay);
+        this.DOM.smallResult.textContent = `Completed 2D Eqn`;
+      }
+      else {
+        const a1 = parseFloat(document.getElementById('sim_1_0').value) || 0;
+        const b1 = parseFloat(document.getElementById('sim_1_1').value) || 0;
+        const c1 = parseFloat(document.getElementById('sim_1_2').value) || 0;
+        const d1 = parseFloat(document.getElementById('sim_1_3').value) || 0;
+        const a2 = parseFloat(document.getElementById('sim_2_0').value) || 0;
+        const b2 = parseFloat(document.getElementById('sim_2_1').value) || 0;
+        const c2 = parseFloat(document.getElementById('sim_2_2').value) || 0;
+        const d2 = parseFloat(document.getElementById('sim_2_3').value) || 0;
+        const a3 = parseFloat(document.getElementById('sim_3_0').value) || 0;
+        const b3 = parseFloat(document.getElementById('sim_3_1').value) || 0;
+        const c3 = parseFloat(document.getElementById('sim_3_2').value) || 0;
+        const d3 = parseFloat(document.getElementById('sim_3_3').value) || 0;
+        const M = [
+          [a1, b1, c1],
+          [a2, b2, c2],
+          [a3, b3, c3]
+        ];
+        const V = [d1, d2, d3];
+        const solution = math.lusolve(M, V);
+        const x = solution[0][0];
+        const y = solution[1][0];
+        const z = solution[2][0];
+        this.closeLcdModal();
+        this.renderKatex(`x = ${math.round(x, 6)},\\ y = ${math.round(y, 6)},\\ z = ${math.round(z, 6)}`, this.DOM.bigDisplay);
+        this.DOM.smallResult.textContent = `Completed 3D Eqn`;
+      }
+    }
+    catch (e) {
+      this.showLcdModal('Error', `<p class="p-2 text-rose-700 font-bold">${e.message}</p>`);
+    }
+  },
+  setupPolynomial(degree) {
+    let inputsHtml = '';
+    if (degree === 2) {
+      inputsHtml = `
+          <div class="flex gap-1.5 items-center">
+            <input type="number" id="poly_a" placeholder="a" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+            <span class="text-[10px] font-bold">x² +</span>
+            <input type="number" id="poly_b" placeholder="b" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+            <span class="text-[10px] font-bold">x +</span>
+            <input type="number" id="poly_c" placeholder="c" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+            <span class="text-[10px] font-bold">= 0</span>
+          </div>
+        `;
+    }
+    else {
+      inputsHtml = `
+          <div class="flex gap-1 items-center">
+            <input type="number" id="poly_a" placeholder="a" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+            <span class="text-[9px] font-bold">x³+</span>
+            <input type="number" id="poly_b" placeholder="b" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+            <span class="text-[9px] font-bold">x²+</span>
+            <input type="number" id="poly_c" placeholder="c" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+            <span class="text-[9px] font-bold">x+</span>
+            <input type="number" id="poly_d" placeholder="d" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+            <span class="text-[9px] font-bold">= 0</span>
+          </div>
+        `;
+    }
+    let html = `
+        <div class="flex flex-col gap-1.5 p-1 text-slate-900 font-sans">
+          <div class="bg-black/5 p-1.5 rounded">
+            <span class="text-[10px] font-bold block mb-1.5">Enter Constants:</span>
+            ${inputsHtml}
+          </div>
+          <button data-onclick="Calculator.solvePolynomial(${degree})" 
+                  class="mt-1 w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">
+            Find Roots
+          </button>
+        </div>
+      `;
+    this.showLcdModal(`Polynomial Roots (Degree ${degree})`, html);
+  },
+  solvePolynomial(degree) {
+    try {
+      const a = parseFloat(document.getElementById('poly_a').value) || 0;
+      const b = parseFloat(document.getElementById('poly_b').value) || 0;
+      const c = parseFloat(document.getElementById('poly_c').value) || 0;
+      if (a === 0) {
+        this.showLcdModal('Error', '<p class="p-2 text-rose-700 font-bold">Coefficient "a" must not be zero.</p>');
+        return;
+      }
+      if (degree === 2) {
+        const disc = b * b - 4 * a * c;
+        let x1, x2;
+        if (disc >= 0) {
+          x1 = (-b + Math.sqrt(disc)) / (2 * a);
+          x2 = (-b - Math.sqrt(disc)) / (2 * a);
+          this.closeLcdModal();
+          this.renderKatex(`x_1 = ${math.round(x1, 6)},\\ x_2 = ${math.round(x2, 6)}`, this.DOM.bigDisplay);
+        }
+        else {
+          const real = -b / (2 * a);
+          const imag = Math.sqrt(-disc) / (2 * a);
+          this.closeLcdModal();
+          this.renderKatex(`x_1, x_2 = ${math.round(real, 5)} \\pm ${math.round(imag, 5)}i`, this.DOM.bigDisplay);
+        }
+        this.DOM.smallResult.textContent = `Completed Quadratic`;
+      }
+      else {
+        const d = parseFloat(document.getElementById('poly_d').value) || 0;
+        const f = ((3 * c / a) - ((b * b) / (a * a))) / 3;
+        const g = (((2 * b * b * b) / (a * a * a)) - ((9 * b * c) / (a * a)) + (27 * d / a)) / 27;
+        const h = (g * g / 4) + (f * f * f / 27);
+        let roots = [];
+        if (h > 0) {
+          const R = -(g / 2) + Math.sqrt(h);
+          const S = Math.cbrt(R);
+          const T = -(g / 2) - Math.sqrt(h);
+          const U = Math.cbrt(T);
+          const r1 = (S + U) - (b / (3 * a));
+          const r2Real = -(S + U) / 2 - (b / (3 * a));
+          const r2Imag = (S - U) * Math.sqrt(3) / 2;
+          roots.push(math.round(r1, 5));
+          roots.push(`${math.round(r2Real, 5)} + ${math.round(r2Imag, 5)}i`);
+          roots.push(`${math.round(r2Real, 5)} - ${math.round(r2Imag, 5)}i`);
+        }
+        else if (f === 0 && g === 0 && h === 0) {
+          const r1 = -Math.cbrt(d / a);
+          roots.push(math.round(r1, 5) + " (Triple Root)");
+        }
+        else {
+          const i = Math.sqrt((g * g / 4) - h);
+          const j = Math.cbrt(i);
+          const k = Math.acos(-(g / (2 * i)));
+          const L = j * -1;
+          const M = Math.cos(k / 3);
+          const N = Math.sqrt(3) * Math.sin(k / 3);
+          const P = (b / (3 * a)) * -1;
+          const r1 = 2 * j * Math.cos(k / 3) - (b / (3 * a));
+          const r2 = L * (M + N) + P;
+          const r3 = L * (M - N) + P;
+          roots.push(math.round(r1, 5));
+          roots.push(math.round(r2, 5));
+          roots.push(math.round(r3, 5));
+        }
+        this.closeLcdModal();
+        this.renderKatex(`x_1 = ${roots[0]},\\ x_2 = ${roots[1]},\\ x_3 = ${roots[2]}`, this.DOM.bigDisplay);
+        this.DOM.smallResult.textContent = `Completed Cubic`;
+      }
+    }
+    catch (e) {
+      this.showLcdModal('Error', `<p class="p-2 text-rose-700 font-bold">${e.message}</p>`);
+    }
+  },
+  performAlgebra(action) {
+    let raw = this.getRawExpression().trim();
+    if (!raw) {
+      this.showLcdModal('Notice', '<p class="p-2 text-slate-800 font-bold">Please enter a valid algebraic expression first.</p>');
+      return;
+    }
+    try {
+      const preparedStr = this.addImplicitMultiplication(this.getPlainExpression(raw).replace(/÷/g, '/'));
+      const balanced = this.balanceParens(preparedStr);
+      let mathjsResult;
+      if (action === 'simplify') {
+        mathjsResult = math.simplify(balanced);
+      }
+      else if (action === 'derivative') {
+        mathjsResult = math.derivative(balanced, 'x');
+      }
+      else if (action === 'rationalize') {
+        mathjsResult = math.rationalize(balanced);
+      }
+      this.closeLcdModal();
+      this.renderKatex(mathjsResult.toTex(), this.DOM.bigDisplay);
+      this.DOM.smallResult.innerHTML = `<span class="text-xs font-bold text-slate-800 uppercase">${action}: ${balanced}</span>`;
+      this.state.mainExpr = mathjsResult.toString();
+      this.state.mainCursor = this.state.mainExpr.length;
+      this.state.activeFrac = null;
+    }
+    catch (e) {
+      this.showLcdModal('Algebra Error', `<p class="p-2 text-rose-700 font-bold">${e.message}</p>`);
+    }
+  },
+  openInequalityMenu() {
+    const html = `
+        <div class="grid grid-cols-1 gap-2 p-1 font-sans text-slate-900">
+          <button data-onclick="Calculator.setupInequality(1)" class="w-full text-left p-1.5 rounded border border-slate-400 hover:bg-slate-300">
+            <span class="font-bold block text-xs">1: ax + b [op] 0 (Linear)</span>
+          </button>
+          <button data-onclick="Calculator.setupInequality(2)" class="w-full text-left p-1.5 rounded border border-slate-400 hover:bg-slate-300">
+            <span class="font-bold block text-xs">2: ax² + bx + c [op] 0 (Quad)</span>
+          </button>
+        </div>
+      `;
+    this.showLcdModal('INEQUALITY SETUP', html);
+  },
+  setupInequality(degree) {
+    let inputsHtml = '';
+    if (degree === 1) {
+      inputsHtml = `
+          <div class="flex gap-1.5 items-center">
+            <input type="number" id="ineq_a" placeholder="a" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+            <span class="text-[10px] font-bold">x +</span>
+            <input type="number" id="ineq_b" placeholder="b" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+          </div>
+        `;
+    }
+    else {
+      inputsHtml = `
+          <div class="flex gap-1 items-center">
+            <input type="number" id="ineq_a" placeholder="a" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+            <span class="text-[10px] font-bold">x² +</span>
+            <input type="number" id="ineq_b" placeholder="b" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+            <span class="text-[10px] font-bold">x +</span>
+            <input type="number" id="ineq_c" placeholder="c" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-slate-900">
+          </div>
+        `;
+    }
+    let html = `
+        <div class="flex flex-col gap-1.5 p-1 text-slate-900 font-sans">
+          <div class="bg-black/5 p-1.5 rounded">
+            <span class="text-[10px] font-bold block mb-1.5">Constants:</span>
+            ${inputsHtml}
+            <div class="mt-2 flex gap-1">
+              <select id="ineq_op" class="w-full bg-white border border-slate-400 rounded py-1 text-xs font-bold">
+                <option value=">">&gt; 0</option>
+                <option value="<">&lt; 0</option>
+                <option value=">=">&ge; 0</option>
+                <option value="<=">&le; 0</option>
+              </select>
+            </div>
+          </div>
+          <button data-onclick="Calculator.solveInequality(${degree})" 
+                  class="mt-1 w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">
+            Solve Inequality
+          </button>
+        </div>
+      `;
+    this.showLcdModal(`Inequality Type ${degree}`, html);
+  },
+  solveInequality(degree) {
+    try {
+      const op = document.getElementById('ineq_op').value;
+      const a = parseFloat(document.getElementById('ineq_a').value) || 0;
+      if (a === 0) {
+        this.showLcdModal('Error', '<p class="p-2 text-rose-700 font-bold">Coefficient "a" must not be zero.</p>');
+        return;
+      }
+      let resultTex = '';
+      if (degree === 1) {
+        const b = parseFloat(document.getElementById('ineq_b').value) || 0;
+        const val = -b / a;
+        const formatVal = math.round(val, 4);
+        if (a > 0) {
+          resultTex = `x ${op.replace('>=', '\\ge').replace('<=', '\\le')} ${formatVal}`;
+        }
+        else {
+          let flipOp = op.includes('>') ? op.replace('>', '<') : op.replace('<', '>');
+          resultTex = `x ${flipOp.replace('>=', '\\ge').replace('<=', '\\le')} ${formatVal}`;
+        }
+      }
+      else {
+        const b = parseFloat(document.getElementById('ineq_b').value) || 0;
+        const c = parseFloat(document.getElementById('ineq_c').value) || 0;
+        const disc = b * b - 4 * a * c;
+        if (disc < 0) {
+          if ((a > 0 && op.includes('>')) || (a < 0 && op.includes('<'))) {
+            resultTex = `\\text{All Real Numbers } (\\mathbb{R})`;
+          }
+          else {
+            resultTex = `\\text{No Solution } (\\emptyset)`;
+          }
+        }
+        else if (disc === 0) {
+          const root = math.round(-b / (2 * a), 4);
+          if (op === '>' && a > 0)
+            resultTex = `x \\neq ${root}`;
+          else if (op === '>=' && a > 0)
+            resultTex = `\\text{All Real Numbers } (\\mathbb{R})`;
+          else if (op === '<' && a > 0)
+            resultTex = `\\text{No Solution } (\\emptyset)`;
+          else if (op === '<=' && a > 0)
+            resultTex = `x = ${root}`;
+          else if (op === '<' && a < 0)
+            resultTex = `x \\neq ${root}`;
+          else if (op === '<=' && a < 0)
+            resultTex = `\\text{All Real Numbers } (\\mathbb{R})`;
+          else if (op === '>' && a < 0)
+            resultTex = `\\text{No Solution } (\\emptyset)`;
+          else if (op === '>=' && a < 0)
+            resultTex = `x = ${root}`;
+        }
+        else {
+          const r1 = math.round((-b - Math.sqrt(disc)) / (2 * a), 4);
+          const r2 = math.round((-b + Math.sqrt(disc)) / (2 * a), 4);
+          const min = Math.min(r1, r2);
+          const max = Math.max(r1, r2);
+          let l_op = op.includes('=') ? '\\le' : '<';
+          if ((a > 0 && op.includes('<')) || (a < 0 && op.includes('>'))) {
+            resultTex = `${min} ${l_op} x ${l_op} ${max}`;
+          }
+          else {
+            let gt_op = op.includes('=') ? '\\ge' : '>';
+            resultTex = `x ${l_op} ${min} \\lor x ${gt_op} ${max}`;
+          }
+        }
+      }
+      this.closeLcdModal();
+      this.renderKatex(resultTex, this.DOM.bigDisplay);
+      this.DOM.smallResult.textContent = `Inequality Complete`;
+    }
+    catch (e) {
+      this.showLcdModal('Error', `<p class="p-2 text-rose-700 font-bold">${e.message}</p>`);
+    }
+  },
+  toggleFractionDecimal() {
+    try {
+      let val = math.evaluate(this.state.lastCalculatedAnswer);
+      if (math.hasNumericValue(val)) {
+        let currentStr = String(this.state.lastCalculatedAnswer);
+        if (currentStr.includes('/')) {
+          this.state.lastCalculatedAnswer = this.formatBigPrecision(val);
+        }
+        else {
+          let frac = math.fraction(math.number(val));
+          this.state.lastCalculatedAnswer = `${frac.n}/${frac.d}`;
+        }
+        this.DOM.smallResult.innerHTML = `<span class="text-xs font-bold text-slate-700">Ans = ${this.state.lastCalculatedAnswer}</span>`;
+      }
+    }
+    catch (e) {
+    }
+  },
+  compileFx(expr) {
+    return math.compile(this.balanceParens(this.addImplicitMultiplication(expr)));
+  },
+  openIntegralSolver() {
+    const html = `
+        <div class="flex flex-col gap-1.5 p-1 text-slate-900 font-sans">
+          <div class="flex gap-1.5 items-center">
+            <span class="text-[10px] font-bold">f(x)=</span>
+            <input id="intFn" value="x^2" class="w-full bg-slate-50 border border-slate-400 rounded py-0.5 px-1 text-xs font-bold">
+          </div>
+          <div class="flex gap-1.5 items-center">
+            <input id="intA" type="number" step="any" placeholder="a" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold">
+            <span class="text-[10px] font-bold">to</span>
+            <input id="intB" type="number" step="any" placeholder="b" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold">
+          </div>
+          <button data-onclick="Calculator.solveIntegral()" class="mt-1 w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">Compute ∫</button>
+        </div>
+      `;
+    this.showLcdModal('NUMERIC INTEGRAL', html);
+  },
+  solveIntegral() {
+    try {
+      const fn = this.compileFx(document.getElementById('intFn').value);
+      const a = parseFloat(document.getElementById('intA').value) || 0;
+      const b = parseFloat(document.getElementById('intB').value) || 0;
+      const n = 2000;
+      const h = (b - a) / n;
+      let sum = math.number(fn.evaluate({ x: a })) + math.number(fn.evaluate({ x: b }));
+      for (let i = 1; i < n; i++) {
+        const x = a + i * h;
+        sum += (i % 2 === 0 ? 2 : 4) * math.number(fn.evaluate({ x }));
+      }
+      const result = (h / 3) * sum;
+      this.state.lastCalculatedAnswer = math.format(result, { precision: 15 });
+      this.closeLcdModal();
+      this.renderKatex(`\\int_{${a}}^{${b}} f(x)\\,dx \\approx ${math.format(result, { precision: 10 })}`, this.DOM.bigDisplay);
+      this.DOM.smallResult.textContent = 'Simpson\u2019s Rule, n=2000';
+    }
+    catch (e) {
+      this.showLcdModal('Error', `<p class="p-2 text-rose-700 font-bold">${e.message}</p>`);
+    }
+  },
+  openNumericDerivative() {
+    const html = `
+        <div class="flex flex-col gap-1.5 p-1 text-slate-900 font-sans">
+          <div class="flex gap-1.5 items-center">
+            <span class="text-[10px] font-bold">f(x)=</span>
+            <input id="derFn" value="x^2" class="w-full bg-slate-50 border border-slate-400 rounded py-0.5 px-1 text-xs font-bold">
+          </div>
+          <div class="flex gap-1.5 items-center">
+            <span class="text-[10px] font-bold">at x=</span>
+            <input id="derA" type="number" step="any" placeholder="a" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold">
+          </div>
+          <button data-onclick="Calculator.solveNumericDerivative()" class="mt-1 w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">Compute d/dx</button>
+        </div>
+      `;
+    this.showLcdModal('NUMERIC DERIVATIVE', html);
+  },
+  solveNumericDerivative() {
+    try {
+      const fn = this.compileFx(document.getElementById('derFn').value);
+      const a = parseFloat(document.getElementById('derA').value) || 0;
+      const h = 1e-6;
+      const result = (math.number(fn.evaluate({ x: a + h })) - math.number(fn.evaluate({ x: a - h }))) / (2 * h);
+      this.state.lastCalculatedAnswer = math.format(result, { precision: 15 });
+      this.closeLcdModal();
+      this.renderKatex(`\\left.\\frac{d}{dx}f(x)\\right|_{x=${a}} \\approx ${math.format(result, { precision: 10 })}`, this.DOM.bigDisplay);
+      this.DOM.smallResult.textContent = 'Central Difference';
+    }
+    catch (e) {
+      this.showLcdModal('Error', `<p class="p-2 text-rose-700 font-bold">${e.message}</p>`);
+    }
+  },
+  openSummationSolver() {
+    const html = `
+        <div class="flex flex-col gap-1.5 p-1 text-slate-900 font-sans">
+          <div class="flex gap-1.5 items-center">
+            <span class="text-[10px] font-bold">f(x)=</span>
+            <input id="sumFn" value="x" class="w-full bg-slate-50 border border-slate-400 rounded py-0.5 px-1 text-xs font-bold">
+          </div>
+          <div class="flex gap-1.5 items-center">
+            <input id="sumA" type="number" step="1" placeholder="start" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold">
+            <span class="text-[10px] font-bold">to</span>
+            <input id="sumB" type="number" step="1" placeholder="end" class="w-full text-center bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold">
+          </div>
+          <button data-onclick="Calculator.solveSummation()" class="mt-1 w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">Compute Σ</button>
+        </div>
+      `;
+    this.showLcdModal('SUMMATION', html);
+  },
+  solveSummation() {
+    try {
+      const fn = this.compileFx(document.getElementById('sumFn').value);
+      const a = Math.round(parseFloat(document.getElementById('sumA').value) || 0);
+      const b = Math.round(parseFloat(document.getElementById('sumB').value) || 0);
+      let sum = math.bignumber(0);
+      for (let x = a; x <= b; x++) {
+        sum = math.add(sum, math.bignumber(fn.evaluate({ x: math.bignumber(x) })));
+      }
+      const formatted = this.formatBigPrecision(sum);
+      this.state.lastCalculatedAnswer = formatted;
+      this.closeLcdModal();
+      this.renderKatex(`\\sum_{x=${a}}^{${b}} f(x) = \\text{${formatted}}`, this.DOM.bigDisplay);
+      this.DOM.smallResult.textContent = 'Summation Complete';
+    }
+    catch (e) {
+      this.showLcdModal('Error', `<p class="p-2 text-rose-700 font-bold">${e.message}</p>`);
+    }
+  },
+  openStatConfig() {
+    const dataStr = this.state.stat.data.join(', ');
+    const html = `
+        <div class="flex flex-col gap-1.5 p-1 text-slate-900 font-sans">
+          <span class="text-[9px] font-bold">Data (comma separated):</span>
+          <textarea id="statData" rows="3" class="w-full bg-slate-50 border border-slate-400 rounded p-1 text-xs font-bold">${dataStr}</textarea>
+          <button data-onclick="Calculator.computeStat()" class="w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">Compute</button>
+          <div id="statResult" class="text-[10px] font-bold leading-relaxed"></div>
+        </div>
+      `;
+    this.showLcdModal('1-VAR STATISTICS', html);
+  },
+  computeStat() {
+    const nums = document.getElementById('statData').value.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+    this.state.stat.data = nums;
+    const out = document.getElementById('statResult');
+    if (nums.length === 0) {
+      out.innerHTML = '<span class="text-rose-700">No valid numbers</span>';
+      return;
+    }
+    const n = nums.length;
+    const sum = nums.reduce((a, b) => a + b, 0);
+    const sumSq = nums.reduce((a, b) => a + b * b, 0);
+    const mean = sum / n;
+    const variancePop = sumSq / n - mean * mean;
+    const varianceSample = n > 1 ? (sumSq - n * mean * mean) / (n - 1) : 0;
+    const fmt = v => math.format(v, { precision: 10 });
+    out.innerHTML = `
+        <div class="grid grid-cols-2 gap-x-2 gap-y-0.5 mt-1">
+          <span>n = ${n}</span><span>Σx = ${fmt(sum)}</span>
+          <span>Σx² = ${fmt(sumSq)}</span><span>x̄ = ${fmt(mean)}</span>
+          <span>σn = ${fmt(Math.sqrt(Math.max(0, variancePop)))}</span>
+          <span>σn-1 = ${fmt(Math.sqrt(Math.max(0, varianceSample)))}</span>
+        </div>
+      `;
+    this.state.lastCalculatedAnswer = fmt(mean);
+  },
+  showBaseTable(num) {
+    const int = Math.trunc(math.number(num));
+    const neg = int < 0;
+    const u = neg ? (int >>> 0) : int;
+    const html = `
+        <div class="grid grid-cols-2 gap-1.5 p-1 font-mono text-slate-900 text-[11px] font-bold">
+          <span class="opacity-60">DEC</span><span>${int}</span>
+          <span class="opacity-60">HEX</span><span>${u.toString(16).toUpperCase()}</span>
+          <span class="opacity-60">OCT</span><span>${u.toString(8)}</span>
+          <span class="opacity-60">BIN</span><span class="break-all">${u.toString(2)}</span>
+        </div>
+      `;
+    this.showLcdModal('BASE-N RESULT', html);
+  },
+  enterGraphMode() {
+    this.DOM.lcdScreen.style.height = '235px';
+    this.DOM.normalWrap.classList.add('hidden');
+    this.DOM.graphWrap.classList.remove('hidden');
+    this.DOM.graphWrap.classList.add('flex');
+    setTimeout(() => {
+      if (this.state.graph.mode === '3D')
+        this.draw3DGraph();
+      else
+        this.drawGraph();
+    }, 30);
+  },
+  exitGraphMode() {
+    this.DOM.lcdScreen.style.height = '';
+    this.DOM.graphWrap.classList.add('hidden');
+    this.DOM.graphWrap.classList.remove('flex');
+    this.DOM.normalWrap.classList.remove('hidden');
+  },
+  setGraphDimension(dim) {
+    this.state.graph.mode = dim;
+    this.closeLcdModal();
+    if (dim === '3D') {
+      this.DOM.graphCanvas.classList.add('hidden');
+      this.DOM.graph3dBox.classList.remove('hidden');
+      setTimeout(() => this.draw3DGraph(), 20);
+    }
+    else {
+      this.DOM.graph3dBox.classList.add('hidden');
+      this.DOM.graphCanvas.classList.remove('hidden');
+      setTimeout(() => this.drawGraph(), 20);
+    }
+  },
+  niceStep(range) {
+    const safeRange = Math.max(1e-12, Math.abs(range));
+    const raw = safeRange / 8;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw || 1)));
+    const norm = raw / mag;
+    const step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+    return Math.max(1e-12, step * mag);
+  },
+  sampleFn(expr, x) {
+    try {
+      const cleaned = this.textbookToMathjs(expr);
+      const raw = this.compileFx(cleaned).evaluate(this.graphScope({ x }));
+      const v = math.number(raw);
+      return (typeof v === 'number' && isFinite(v)) ? v : NaN;
+    }
+    catch (e) {
+      return NaN;
+    }
+  },
+  textbookToMathjs(str) {
+    if (!str)
+      return '';
+    let s = String(str);
+    s = s.replace(/²/g, '^2').replace(/³/g, '^3');
+    s = s.replace(/√\s*\(([^()]+)\)/g, 'sqrt($1)');
+    s = s.replace(/√\s*([a-zA-Z0-9_.]+)/g, 'sqrt($1)');
+    s = s.replace(/∛\s*\(([^()]+)\)/g, 'cbrt($1)');
+    s = s.replace(/∛\s*([a-zA-Z0-9_.]+)/g, 'cbrt($1)');
+    s = s.replace(/π/g, 'pi');
+    s = s.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+    return s;
+  },
+  graphScope(extra) {
+    return Object.assign({}, this.state.graph.vars, extra);
+  },
+  graphFnTex(expr) {
+    return this.renderTex(this.addImplicitMultiplication(this.textbookToMathjs(expr)));
+  },
+  fmtTick(v) {
+    if (v === 0)
+      return '0';
+    const a = Math.abs(v);
+    if (a >= 1e6 || a < 1e-4)
+      return v.toExponential(1).replace('+', '');
+    return String(Number(v.toPrecision(8)));
+  },
+  drawGraph() {
+    if (this.state.graph.mode === '3D') {
+      this.draw3DGraph();
+      return;
+    }
+    const cv = this.DOM.graphCanvas;
+    if (!cv || cv.clientWidth === 0)
+      return;
+    const ctx = cv.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    cv.width = w * dpr;
+    cv.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const g = this.state.graph;
+    if (!isFinite(g.xmin) || !isFinite(g.xmax) || g.xmax <= g.xmin) {
+      g.xmin = -10;
+      g.xmax = 10;
+    }
+    if (!isFinite(g.ymin) || !isFinite(g.ymax) || g.ymax <= g.ymin) {
+      g.ymin = -10;
+      g.ymax = 10;
+    }
+    const light = g.bg === 'light';
+    const pal = light
+      ? { bg: '#ffffff', grid: 'rgba(0,0,0,0.12)', axis: 'rgba(0,0,0,0.75)', text: '#111827', quad: 'rgba(0,0,0,0.13)' }
+      : { bg: '#09111e', grid: 'rgba(255,255,255,0.08)', axis: 'rgba(255,255,255,0.4)', text: '#cbd5e1', quad: 'rgba(255,255,255,0.1)' };
+    ctx.fillStyle = pal.bg;
+    ctx.fillRect(0, 0, w, h);
+    const xRange = g.xmax - g.xmin;
+    const yRange = g.ymax - g.ymin;
+    const sx = x => ((x - g.xmin) / xRange) * w;
+    const sy = y => h - ((y - g.ymin) / yRange) * h;
+    const stepX = this.niceStep(xRange), stepY = this.niceStep(yRange);
+    const ix0 = Math.ceil(g.xmin / stepX), ix1 = Math.floor(g.xmax / stepX);
+    const iy0 = Math.ceil(g.ymin / stepY), iy1 = Math.floor(g.ymax / stepY);
+    ctx.font = 'bold 18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = pal.quad;
+    [['I', 1, 1], ['II', -1, 1], ['III', -1, -1], ['IV', 1, -1]].forEach(([label, qx, qy]) => {
+      const x0 = qx > 0 ? Math.max(0, g.xmin) : g.xmin, x1 = qx > 0 ? g.xmax : Math.min(0, g.xmax);
+      const y0 = qy > 0 ? Math.max(0, g.ymin) : g.ymin, y1 = qy > 0 ? g.ymax : Math.min(0, g.ymax);
+      if (x1 <= x0 || y1 <= y0)
+        return;
+      ctx.fillText(label, (sx(x0) + sx(x1)) / 2, (sy(y0) + sy(y1)) / 2);
+    });
+    ctx.strokeStyle = pal.grid;
+    ctx.lineWidth = 1;
+    const countX = ix1 - ix0;
+    const countY = iy1 - iy0;
+    if (countX > 0 && countX < 100) {
+      for (let i = ix0; i <= ix1; i++) {
+        const px = sx(i * stepX);
+        ctx.beginPath();
+        ctx.moveTo(px, 0);
+        ctx.lineTo(px, h);
+        ctx.stroke();
+      }
+    }
+    if (countY > 0 && countY < 100) {
+      for (let j = iy0; j <= iy1; j++) {
+        const py = sy(j * stepY);
+        ctx.beginPath();
+        ctx.moveTo(0, py);
+        ctx.lineTo(w, py);
+        ctx.stroke();
+      }
+    }
+    ctx.strokeStyle = pal.axis;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(sx(0), 0);
+    ctx.lineTo(sx(0), h);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, sy(0));
+    ctx.lineTo(w, sy(0));
+    ctx.stroke();
+    const axY = Math.min(Math.max(sy(0), 0), h), axX = Math.min(Math.max(sx(0), 0), w);
+    const below = axY < h - 14, onRight = axX < w - 36;
+    ctx.font = '9px ui-monospace, monospace';
+    ctx.fillStyle = pal.text;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = below ? 'top' : 'bottom';
+    if (countX > 0 && countX < 100) {
+      for (let i = ix0; i <= ix1; i++) {
+        if (i === 0)
+          continue;
+        ctx.fillText(this.fmtTick(i * stepX), sx(i * stepX), below ? axY + 3 : axY - 3);
+      }
+    }
+    ctx.textAlign = onRight ? 'left' : 'right';
+    ctx.textBaseline = 'middle';
+    if (countY > 0 && countY < 100) {
+      for (let j = iy0; j <= iy1; j++) {
+        if (j === 0)
+          continue;
+        ctx.fillText(this.fmtTick(j * stepY), onRight ? axX + 4 : axX - 4, sy(j * stepY));
+      }
+    }
+    if (g.xmin <= 0 && g.xmax >= 0 && g.ymin <= 0 && g.ymax >= 0) {
+      ctx.textAlign = onRight ? 'left' : 'right';
+      ctx.textBaseline = below ? 'top' : 'bottom';
+      ctx.fillText('0', onRight ? axX + 4 : axX - 4, below ? axY + 3 : axY - 3);
+    }
+    ctx.font = 'italic bold 12px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('x', w - 8, Math.min(Math.max(axY - 9, 9), h - 9));
+    ctx.fillText('y', Math.min(Math.max(axX + 9, 9), w - 9), 9);
+    const curves = [
+      ['y1', '#3b82f6'],
+      ['y2', '#f43f5e'],
+      ['y3', '#10b981'],
+      ['y4', '#a855f7']
+    ];
+    curves.forEach(([key, color]) => {
+      const expr = g[key];
+      if (!expr)
+        return;
+      let fastFn = null, compiled = null;
+      try {
+        fastFn = this.buildFast3DEvaluator(expr);
+      }
+      catch (e) {
+        fastFn = null;
+      }
+      if (!fastFn) {
+        try {
+          compiled = this.compileFx(this.textbookToMathjs(expr));
+        }
+        catch (e) {
+          return;
+        }
+      }
+      const scope = this.graphScope({ x: 0 });
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, w, h);
+      ctx.clip();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      let prevPx = null, prevPy = null, prevY = null;
+      const stepPx = 0.5;
+      for (let px = 0; px <= w + stepPx; px += stepPx) {
+        const x = g.xmin + (px / w) * xRange;
+        let y = NaN;
+        if (fastFn) {
+          y = fastFn(x, 0);
+        }
+        else {
+          scope.x = x;
+          try {
+            y = math.number(compiled.evaluate(scope));
+          }
+          catch (e) {
+            y = NaN;
+          }
+        }
+        if (typeof y !== 'number' || !isFinite(y)) {
+          prevPx = null;
+          prevPy = null;
+          prevY = null;
+          continue;
+        }
+        const py = sy(y);
+        if (prevPx !== null && prevPy !== null) {
+          const isAsymptote = (prevY * y < 0 && Math.abs(py - prevPy) > h * 2.5);
+          const bothOutTop = (prevPy < -20 && py < -20);
+          const bothOutBot = (prevPy > h + 20 && py > h + 20);
+          if (!isAsymptote && !bothOutTop && !bothOutBot) {
+            let x1 = prevPx, y1 = prevPy, x2 = px, y2 = py;
+            const yMinClip = -20, yMaxClip = h + 20;
+            if (y1 < yMinClip) {
+              x1 = x1 + ((yMinClip - y1) / (y2 - y1)) * (x2 - x1);
+              y1 = yMinClip;
+            }
+            else if (y1 > yMaxClip) {
+              x1 = x1 + ((yMaxClip - y1) / (y2 - y1)) * (x2 - x1);
+              y1 = yMaxClip;
+            }
+            if (y2 < yMinClip) {
+              x2 = x1 + ((yMinClip - y1) / (y2 - y1)) * (x2 - x1);
+              y2 = yMinClip;
+            }
+            else if (y2 > yMaxClip) {
+              x2 = x1 + ((yMaxClip - y1) / (y2 - y1)) * (x2 - x1);
+              y2 = yMaxClip;
+            }
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+          }
+        }
+        prevPx = px;
+        prevPy = py;
+        prevY = y;
+      }
+      ctx.stroke();
+      ctx.restore();
+    });
+    if (g.trace) {
+      this.drawTraceMarker(sx, sy);
+      return;
+    }
+    const active = curves.filter(([k]) => g[k]);
+    if (!active.length) {
+      this.DOM.graphStatus.textContent = 'No functions set (Press OPTN)';
+      return;
+    }
+    this.renderKatex(active.map(([k]) => `y_{${k[1]}}=${this.graphFnTex(g[k])}`).join('\\;|\\;'), this.DOM.graphStatus);
+  },
+  drawTraceMarker(sx, sy) {
+    const g = this.state.graph;
+    const key = 'y' + (g.traceIdx || 1);
+    const expr = g[key] || g.y1 || g.y2 || g.y3 || g.y4;
+    const y = this.sampleFn(expr, g.traceX);
+    if (!isFinite(y))
+      return;
+    const cv = this.DOM.graphCanvas, ctx = cv.getContext('2d');
+    ctx.fillStyle = '#f43f5e';
+    ctx.beginPath();
+    ctx.arc(sx(g.traceX), sy(y), 4, 0, Math.PI * 2);
+    ctx.fill();
+    this.DOM.graphStatus.textContent = `${key.toUpperCase()}: x=${math.round(g.traceX, 5)}  y=${math.round(y, 5)}`;
+  },
+  onGraphTap(e) {
+    const g = this.state.graph;
+    const rect = this.DOM.graphCanvas.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const tapX = g.xmin + (px / rect.width) * (g.xmax - g.xmin);
+    const tapY = g.ymax - (py / rect.height) * (g.ymax - g.ymin);
+    let bestIdx = 1, bestDist = Infinity;
+    [1, 2, 3, 4].forEach(i => {
+      if (!g['y' + i])
+        return;
+      const fy = this.sampleFn(g['y' + i], tapX);
+      if (isFinite(fy) && Math.abs(fy - tapY) < bestDist) {
+        bestDist = Math.abs(fy - tapY);
+        bestIdx = i;
+      }
+    });
+    g.traceIdx = bestIdx;
+    g.traceX = tapX;
+    g.trace = true;
+    this.drawGraph();
+  },
+  panGraph(dx, dy) {
+    const g = this.state.graph;
+    const rx = (g.xmax - g.xmin) * 0.12 * dx, ry = (g.ymax - g.ymin) * 0.12 * dy;
+    g.xmin += rx;
+    g.xmax += rx;
+    g.ymin += ry;
+    g.ymax += ry;
+    this.drawGraph();
+  },
+  zoomGraph(factor) {
+    const g = this.state.graph;
+    if (g.mode === '3D') {
+      g.zoom3d = Math.max(0.03, Math.min(40, g.zoom3d * factor));
+      this.update3DCamera();
+      return;
+    }
+    const cx = (g.xmin + g.xmax) / 2, cy = (g.ymin + g.ymax) / 2;
+    const hx = ((g.xmax - g.xmin) / 2) * factor;
+    const hy = ((g.ymax - g.ymin) / 2) * factor;
+    if (!isFinite(hx) || !isFinite(hy) || hx < 1e-8 || hy < 1e-8 || hx > 1e12 || hy > 1e12)
+      return;
+    g.xmin = cx - hx;
+    g.xmax = cx + hx;
+    g.ymin = cy - hy;
+    g.ymax = cy + hy;
+    this.drawGraph();
+  },
+  resetGraphView() {
+    Object.assign(this.state.graph, {
+      xmin: -10, xmax: 10, ymin: -10, ymax: 10, zmin: -6, zmax: 6,
+      trace: false, rotX: 0.95, rotZ: 0.65, zoom3d: 1.0, isSphereMode: false
+    });
+    if (this.state.graph.mode === '3D')
+      this.draw3DGraph();
+    else
+      this.drawGraph();
+  },
+  init3DControls() {
+    const self = this;
+    const box = this.DOM.graph3dBox, cv = this.DOM.graphCanvas;
+    box.style.touchAction = 'none';
+    cv.style.touchAction = 'none';
+    let dragging = false, lastX = 0, lastY = 0, pinch = 0;
+    let pan2D = false, panX = 0, panY = 0;
+    const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const start = (x, y) => { dragging = true; lastX = x; lastY = y; };
+    const move = (x, y) => {
+      if (!dragging)
+        return;
+      const g = this.state.graph;
+      g.rotZ += (x - lastX) * 0.015;
+      g.rotX = Math.max(0.01, Math.min(Math.PI - 0.01, g.rotX + (y - lastY) * 0.015));
+      lastX = x;
+      lastY = y;
+      this.update3DCamera();
+    };
+    const end = () => { dragging = false; pinch = 0; };
+    box.addEventListener('mousedown', e => start(e.clientX, e.clientY));
+    window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+    window.addEventListener('mouseup', end);
+    box.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        dragging = false;
+        pinch = dist(e.touches);
+      }
+      else if (e.touches[0]) {
+        pinch = 0;
+        start(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+    box.addEventListener('touchmove', e => {
+      if (e.touches.length === 2 && pinch) {
+        const d = dist(e.touches);
+        if (d > 0)
+          self.zoomGraph(pinch / d);
+        pinch = d;
+        return;
+      }
+      if (e.touches[0])
+        move(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    box.addEventListener('touchend', end);
+    cv.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        pan2D = false;
+        pinch = dist(e.touches);
+      }
+      else if (e.touches.length === 1) {
+        pinch = 0;
+        pan2D = true;
+        panX = e.touches[0].clientX;
+        panY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    cv.addEventListener('touchmove', e => {
+      if (e.touches.length === 2 && pinch) {
+        const d = dist(e.touches);
+        if (d > 0)
+          self.zoomGraph(pinch / d);
+        pinch = d;
+      }
+      else if (e.touches.length === 1 && pan2D) {
+        const rect = cv.getBoundingClientRect();
+        const dxPx = e.touches[0].clientX - panX;
+        const dyPx = e.touches[0].clientY - panY;
+        panX = e.touches[0].clientX;
+        panY = e.touches[0].clientY;
+        const g = self.state.graph;
+        const dxM = (dxPx / rect.width) * (g.xmax - g.xmin);
+        const dyM = (dyPx / rect.height) * (g.ymax - g.ymin);
+        g.xmin -= dxM;
+        g.xmax -= dxM;
+        g.ymin += dyM;
+        g.ymax += dyM;
+        self.drawGraph();
+      }
+    }, { passive: true });
+    cv.addEventListener('touchend', () => { pinch = 0; pan2D = false; });
+    [box, cv].forEach(el => el.addEventListener('wheel', e => {
+      e.preventDefault();
+      self.zoomGraph(e.deltaY > 0 ? 1.15 : 0.87);
+    }, { passive: false }));
+  },
+  update3DCamera() {
+    if (!this._three || !this._three.camera)
+      return;
+    const g = this.state.graph;
+    const r = 24 * g.zoom3d;
+    const cam = this._three.camera;
+    cam.position.x = r * Math.sin(g.rotX) * Math.cos(g.rotZ);
+    cam.position.z = r * Math.sin(g.rotX) * Math.sin(g.rotZ);
+    cam.position.y = r * Math.cos(g.rotX);
+    cam.lookAt(0, 0, 0);
+    this._three.renderer.render(this._three.scene, cam);
+  },
+  resize3D() {
+    if (!this._three || !this._three.renderer)
+      return;
+    const box = this.DOM.graph3dBox;
+    if (!box || box.clientWidth === 0)
+      return;
+    this._three.camera.aspect = box.clientWidth / box.clientHeight;
+    this._three.camera.updateProjectionMatrix();
+    this._three.renderer.setSize(box.clientWidth, box.clientHeight);
+    this.update3DCamera();
+  },
+  openSphereConfig() {
+    const r = this.state.graph.sphereRadius || 5;
+    const html = `
+        <div class="flex flex-col gap-2 p-1 text-slate-900 font-sans">
+          <span class="text-[10px] font-bold">Parametric Sphere: x² + y² + z² = r²</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold">Radius (r):</span>
+            <input id="sphereRInput" type="number" step="any" value="${r}" class="w-full bg-slate-50 border border-slate-400 rounded py-1 px-1.5 text-xs font-bold font-mono">
+          </div>
+          <button data-onclick="Calculator.drawFullSphere()" class="mt-1 w-full bg-teal-800 text-white font-bold py-1.5 rounded text-[10px] uppercase hover:bg-teal-700">Render 3D Sphere</button>
+        </div>
+      `;
+    this.showLcdModal('3D PARAMETRIC SPHERE', html);
+  },
+  drawFullSphere() {
+    const r = parseFloat(document.getElementById('sphereRInput').value) || 5;
+    this.state.graph.sphereRadius = r;
+    this.state.graph.isSphereMode = true;
+    this.state.graph.mode = '3D';
+    this.closeLcdModal();
+    this.DOM.graphCanvas.classList.add('hidden');
+    this.DOM.graph3dBox.classList.remove('hidden');
+    setTimeout(() => this.draw3DGraph(), 20);
+  },
+  buildFast3DEvaluator(expr) {
+    const cleaned = this.balanceParens(this.addImplicitMultiplication(this.textbookToMathjs(expr)));
+    const node = math.parse(cleaned);
+    const vars = this.state.graph.vars || {};
+    const jsExpr = node.toString({
+      handler: (n, opts) => {
+        if (n.type === 'OperatorNode') {
+          if (n.op === '^')
+            return `Math.pow(${n.args[0].toString(opts)}, ${n.args[1].toString(opts)})`;
+          if (n.op === 'unaryMinus')
+            return `(-(${n.args[0].toString(opts)}))`;
+          if (n.op === 'unaryPlus')
+            return `(+(${n.args[0].toString(opts)}))`;
+        }
+        if (n.type === 'FunctionNode') {
+          const fnName = n.fn.name;
+          const argsStr = n.args.map(a => a.toString(opts)).join(', ');
+          const trigDeg = this.state.isDegree ? '(Math.PI/180)*' : '';
+          const invDeg = this.state.isDegree ? '(180/Math.PI)*' : '';
+          const map = {
+            sin: `Math.sin(${trigDeg}(${argsStr}))`,
+            cos: `Math.cos(${trigDeg}(${argsStr}))`,
+            tan: `Math.tan(${trigDeg}(${argsStr}))`,
+            asin: `(${invDeg}Math.asin(${argsStr}))`,
+            acos: `(${invDeg}Math.acos(${argsStr}))`,
+            atan: `(${invDeg}Math.atan(${argsStr}))`,
+            sinh: `Math.sinh(${argsStr})`,
+            cosh: `Math.cosh(${argsStr})`,
+            tanh: `Math.tanh(${argsStr})`,
+            sqrt: `Math.sqrt(${argsStr})`,
+            cbrt: `Math.cbrt(${argsStr})`,
+            abs: `Math.abs(${argsStr})`,
+            exp: `Math.exp(${argsStr})`,
+            log: `Math.log(${argsStr})`,
+            log10: `Math.log10(${argsStr})`,
+            log2: `Math.log2(${argsStr})`,
+            floor: `Math.floor(${argsStr})`,
+            ceil: `Math.ceil(${argsStr})`,
+            round: `Math.round(${argsStr})`,
+            pow: `Math.pow(${argsStr})`,
+            hypot: `Math.hypot(${argsStr})`
+          };
+          if (map[fnName])
+            return map[fnName];
+        }
+        if (n.type === 'SymbolNode') {
+          if (n.name === 'pi')
+            return 'Math.PI';
+          if (n.name === 'e')
+            return 'Math.E';
+          if (Object.prototype.hasOwnProperty.call(vars, n.name))
+            return `(${Number(vars[n.name])})`;
+        }
+        return undefined;
+      }
+    });
+    return new Function('x', 'y', `try { 
+        let v = (${jsExpr});
+        if (isNaN(v)) return 0;
+        return v; 
+      } catch(e) { return 0; }`);
+  },
+  draw3DGraph() {
+    const box = this.DOM.graph3dBox;
+    if (!box || typeof THREE === 'undefined')
+      return;
+    const w = box.clientWidth || this.DOM.lcdScreen.clientWidth - 16 || 340;
+    const h = box.clientHeight || 190;
+    if (!this._three) {
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(42, w / h, 0.01, 5000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(window.devicePixelRatio || 1);
+      renderer.setSize(w, h);
+      box.innerHTML = '';
+      box.appendChild(renderer.domElement);
+      this._three = { scene, camera, renderer };
+    }
+    else {
+      this._three.camera.aspect = w / h;
+      this._three.camera.updateProjectionMatrix();
+      this._three.renderer.setSize(w, h);
+    }
+    const { scene } = this._three;
+    while (scene.children.length > 0)
+      scene.remove(scene.children[0]);
+    const gridHelper = new THREE.GridHelper(14, 14, 0x334155, 0x1e293b);
+    gridHelper.material.opacity = 0.35;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+    const axesHelper = new THREE.AxesHelper(8);
+    scene.add(axesHelper);
+    const g = this.state.graph;
+    const implicitSphereMatch = String(g.z1).replace(/\s+/g, '').match(/^x\^2\+y\^2\+z\^2=(\d+(?:\.\d+)?)$/i);
+    if (g.isSphereMode || implicitSphereMatch) {
+      const r = implicitSphereMatch ? Math.sqrt(parseFloat(implicitSphereMatch[1])) : (g.sphereRadius || 5);
+      const scaleR = (r / Math.max(1, (g.xmax - g.xmin) / 2)) * 7;
+      const sphereGeom = new THREE.SphereGeometry(scaleR, 48, 36);
+      const pos = sphereGeom.attributes.position;
+      const colors = [];
+      const color = new THREE.Color();
+      for (let i = 0; i < pos.count; i++) {
+        const yVal = pos.getY(i);
+        const t = (yVal + scaleR) / (2 * scaleR);
+        color.setHSL(0.72 * (1 - t), 0.92, 0.52);
+        colors.push(color.r, color.g, color.b);
+      }
+      sphereGeom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      const mat = new THREE.MeshBasicMaterial({ vertexColors: true });
+      scene.add(new THREE.Mesh(sphereGeom, mat));
+      const wireMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, wireframe: true, transparent: true, opacity: 0.16 });
+      scene.add(new THREE.Mesh(sphereGeom, wireMat));
+      this.update3DCamera();
+      this.renderKatex(`x^2+y^2+z^2=${math.round(r * r, 4)}\\;\\text{(Full 3D Sphere)}`, this.DOM.graphStatus);
+      return;
+    }
+    const rawExpr = g.z1 || 'sqrt(25 - x^2 - y^2)';
+    const segs = 64;
+    const geom = new THREE.BufferGeometry();
+    const positions = [];
+    const colors = [];
+    const indices = [];
+    let fastFn = null;
+    let compiled = null;
+    try {
+      fastFn = this.buildFast3DEvaluator(rawExpr);
+      const testVal = fastFn(1.23, -0.77);
+      if (typeof testVal !== 'number')
+        fastFn = null;
+    }
+    catch (e) {
+      fastFn = null;
+    }
+    if (!fastFn) {
+      try {
+        compiled = this.compileFx(this.textbookToMathjs(rawExpr));
+      }
+      catch (e) {
+        compiled = null;
+      }
+    }
+    const zGrid = [];
+    let minZ = Infinity, maxZ = -Infinity;
+    const scope = this.graphScope({ x: 0, y: 0 });
+    for (let iy = 0; iy <= segs; iy++) {
+      const row = [];
+      const wy = g.ymin + (iy / segs) * (g.ymax - g.ymin);
+      for (let ix = 0; ix <= segs; ix++) {
+        const wx = g.xmin + (ix / segs) * (g.xmax - g.xmin);
+        let wz = NaN;
+        if (fastFn) {
+          wz = fastFn(wx, wy);
+        }
+        else if (compiled) {
+          try {
+            scope.x = wx;
+            scope.y = wy;
+            wz = math.number(compiled.evaluate(scope));
+          }
+          catch (e) {
+            wz = 0;
+          }
+        }
+        if (typeof wz === 'number' && isFinite(wz)) {
+          wz = Math.max(g.zmin, Math.min(g.zmax, wz));
+          if (wz < minZ)
+            minZ = wz;
+          if (wz > maxZ)
+            maxZ = wz;
+          row.push(wz);
+        }
+        else {
+          row.push(0);
+        }
+      }
+      zGrid.push(row);
+    }
+    if (!isFinite(minZ) || !isFinite(maxZ)) {
+      minZ = g.zmin;
+      maxZ = g.zmax;
+    }
+    const spanZ = Math.max(0.001, maxZ - minZ);
+    const midZ = (g.zmin + g.zmax) / 2;
+    const boundSpan = Math.max(0.001, g.zmax - g.zmin);
+    const color = new THREE.Color();
+    for (let iy = 0; iy <= segs; iy++) {
+      const sy = ((iy / segs) - 0.5) * 14;
+      for (let ix = 0; ix <= segs; ix++) {
+        const sx = ((ix / segs) - 0.5) * 14;
+        const wz = zGrid[iy][ix];
+        const sz = ((wz - midZ) / boundSpan) * 9;
+        positions.push(sx, sz, sy);
+        const t = (wz - minZ) / spanZ;
+        color.setHSL(0.72 * (1 - t), 0.92, 0.52);
+        colors.push(color.r, color.g, color.b);
+      }
+    }
+    for (let iy = 0; iy < segs; iy++) {
+      for (let ix = 0; ix < segs; ix++) {
+        const a = iy * (segs + 1) + ix;
+        const b = a + 1;
+        const c = (iy + 1) * (segs + 1) + ix;
+        const d = c + 1;
+        indices.push(a, c, b, b, c, d);
+      }
+    }
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geom.setIndex(indices);
+    geom.computeVertexNormals();
+    const mat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+    scene.add(new THREE.Mesh(geom, mat));
+    const wireMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, wireframe: true, transparent: true, opacity: 0.16 });
+    scene.add(new THREE.Mesh(geom, wireMat));
+    this.update3DCamera();
+    this.renderKatex('Z(x,y)=' + this.graphFnTex(rawExpr) + '\\;\\text{(drag / pinch)}', this.DOM.graphStatus);
+  },
+  setGraphFunc(which) {
+    this.state.graph.isSphereMode = false;
+    const cur = (this.state.graph[which] || (which === 'z1' ? 'sqrt(25 - x^2 - y^2)' : 'x^2')).replace(/"/g, '&quot;');
+    const label = which === 'z1' ? 'Z(x,y) or x^2+y^2+z^2=25' : which.toUpperCase() + ' = f(x)';
+    const varBtns = Object.keys(this.state.graph.vars).map(k => `<button data-onclick="Calculator.insertGraphSymbol('${k}')" class="bg-black/10 hover:bg-black/20 py-1 px-2 rounded text-[10px] font-bold text-sky-800">${k}</button>`).join('');
+    const html = `
+        <div class="flex flex-col gap-2 p-1 text-slate-900 font-sans">
+          <span class="text-[10px] font-bold">${label}</span>
+          <div id="graphFnTex" class="bg-white/80 border border-slate-400 rounded px-2 py-1.5 overflow-x-auto scroller min-h-[38px] flex items-center text-slate-950"></div>
+          <input id="graphFnInput" value="${cur}" autocomplete="off" spellcheck="false" class="w-full bg-slate-50 border border-slate-400 rounded py-1 px-1.5 text-xs font-bold font-mono">
+          <div class="flex gap-1 flex-wrap">
+            <button data-onclick="Calculator.insertGraphSymbol('^2')" class="bg-black/10 hover:bg-black/20 py-1 px-2 rounded text-[10px] font-bold">x²</button>
+            <button data-onclick="Calculator.insertGraphSymbol('^3')" class="bg-black/10 hover:bg-black/20 py-1 px-2 rounded text-[10px] font-bold">x³</button>
+            <button data-onclick="Calculator.insertGraphSymbol('^')" class="bg-black/10 hover:bg-black/20 py-1 px-2 rounded text-[10px] font-bold">xʸ</button>
+            <button data-onclick="Calculator.insertGraphSymbol('sqrt(')" class="bg-black/10 hover:bg-black/20 py-1 px-2 rounded text-[10px] font-bold">√</button>
+            <button data-onclick="Calculator.insertGraphSymbol('pi')" class="bg-black/10 hover:bg-black/20 py-1 px-2 rounded text-[10px] font-bold">π</button>
+            <button data-onclick="Calculator.insertGraphSymbol('x')" class="bg-black/10 hover:bg-black/20 py-1 px-2 rounded text-[10px] font-bold text-pink-700">x</button>
+            <button data-onclick="Calculator.insertGraphSymbol('y')" class="bg-black/10 hover:bg-black/20 py-1 px-2 rounded text-[10px] font-bold text-pink-700">y</button>
+            ${varBtns}
+          </div>
+          <button data-onclick="Calculator.saveGraphFunc('${which}')" class="mt-1 w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">Save &amp; Draw</button>
+        </div>
+      `;
+    this.showLcdModal(`SET ${which.toUpperCase()}`, html);
+    this._graphFnWhich = which;
+    this.updateGraphTex();
+  },
+  updateGraphTex() {
+    const input = document.getElementById('graphFnInput');
+    const box = document.getElementById('graphFnTex');
+    if (!input || !box)
+      return;
+    const which = this._graphFnWhich || 'y1';
+    if (which === 'z1' && input.value.includes('=')) {
+      this.renderKatex(this.escapeLatex(input.value), box);
+      return;
+    }
+    const head = which === 'z1' ? 'Z(x,y)=' : `y_{${which[1]}}=`;
+    if (!input.value.trim()) {
+      this.renderKatex(head + '\\square', box);
+      return;
+    }
+    this.renderKatex(head + this.graphFnTex(input.value), box);
+  },
+  insertGraphSymbol(sym) {
+    const input = document.getElementById('graphFnInput');
+    if (!input)
+      return;
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    const val = input.value;
+    input.value = val.substring(0, start) + sym + val.substring(end);
+    input.focus();
+    input.setSelectionRange(start + sym.length, start + sym.length);
+    this.updateGraphTex();
+  },
+  toggleGraphBg() {
+    const g = this.state.graph;
+    g.bg = g.bg === 'light' ? 'dark' : 'light';
+    this.closeLcdModal();
+    this.drawGraph();
+  },
+  openGraphVars() {
+    const v = this.state.graph.vars;
+    const val = Object.keys(v).map(k => `${k}=${v[k]}`).join(', ');
+    const html = `
+        <div class="flex flex-col gap-2 p-1 text-slate-900 font-sans">
+          <span class="text-[10px] font-bold">name=value, comma separated</span>
+          <input id="graphVarsInput" value="${val}" autocomplete="off" spellcheck="false" class="w-full bg-slate-50 border border-slate-400 rounded py-1 px-1 text-xs font-bold font-mono">
+          <button data-onclick="Calculator.saveGraphVars()" class="w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">Apply</button>
+        </div>
+      `;
+    this.showLcdModal('VARIABLES', html);
+  },
+  saveGraphVars() {
+    const raw = document.getElementById('graphVarsInput').value;
+    const out = {};
+    raw.split(/[,;\n]+/).forEach(part => {
+      const m = part.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$/);
+      if (!m || m[1] === 'x' || m[1] === 'y' || typeof math[m[1]] === 'function')
+        return;
+      try {
+        const n = math.number(math.evaluate(this.balanceParens(this.addImplicitMultiplication(this.textbookToMathjs(m[2])))));
+        if (typeof n === 'number' && isFinite(n))
+          out[m[1]] = n;
+      }
+      catch (e) { }
+    });
+    this.state.graph.vars = out;
+    this.closeLcdModal();
+    if (this.state.graph.mode === '3D')
+      this.draw3DGraph();
+    else
+      this.drawGraph();
+  },
+  saveGraphFunc(which) {
+    const val = document.getElementById('graphFnInput').value.trim();
+    this.state.graph[which] = val;
+    this.closeLcdModal();
+    if (which === 'z1' || this.state.graph.mode === '3D') {
+      this.state.graph.mode = '3D';
+      this.DOM.graphCanvas.classList.add('hidden');
+      this.DOM.graph3dBox.classList.remove('hidden');
+      setTimeout(() => this.draw3DGraph(), 20);
+    }
+    else {
+      this.drawGraph();
+    }
+  },
+  openVWindow() {
+    const g = this.state.graph;
+    const is3d = g.mode === '3D';
+    const html = `
+        <div class="flex flex-col gap-1.5 p-1 text-slate-900 font-sans">
+          <div class="grid grid-cols-2 gap-1.5">
+            <input id="vwXmin" type="number" step="any" value="${g.xmin}" placeholder="Xmin" class="bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-center">
+            <input id="vwXmax" type="number" step="any" value="${g.xmax}" placeholder="Xmax" class="bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-center">
+            <input id="vwYmin" type="number" step="any" value="${g.ymin}" placeholder="Ymin" class="bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-center">
+            <input id="vwYmax" type="number" step="any" value="${g.ymax}" placeholder="Ymax" class="bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-center">
+            ${is3d ? `
+              <input id="vwZmin" type="number" step="any" value="${g.zmin}" placeholder="Zmin" class="bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-center">
+              <input id="vwZmax" type="number" step="any" value="${g.zmax}" placeholder="Zmax" class="bg-slate-50 border border-slate-400 rounded py-0.5 text-xs font-bold text-center">
+            ` : ''}
+          </div>
+          <button data-onclick="Calculator.saveVWindow()" class="w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">Apply</button>
+        </div>
+      `;
+    this.showLcdModal(is3d ? '3D BOUNDS' : 'V-WINDOW', html);
+  },
+  saveVWindow() {
+    const g = this.state.graph;
+    g.xmin = parseFloat(document.getElementById('vwXmin').value);
+    g.xmax = parseFloat(document.getElementById('vwXmax').value);
+    g.ymin = parseFloat(document.getElementById('vwYmin').value);
+    g.ymax = parseFloat(document.getElementById('vwYmax').value);
+    if (document.getElementById('vwZmin')) {
+      g.zmin = parseFloat(document.getElementById('vwZmin').value);
+      g.zmax = parseFloat(document.getElementById('vwZmax').value);
+    }
+    this.closeLcdModal();
+    if (g.mode === '3D')
+      this.draw3DGraph();
+    else
+      this.drawGraph();
+  },
+  openGSolveMenu() {
+    const html = `
+        <div class="grid grid-cols-2 gap-2 p-1 font-sans text-slate-900">
+          <button data-onclick="Calculator.gsolveRoot()" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[10px] font-bold uppercase">Root</button>
+          <button data-onclick="Calculator.gsolveExtremum('min')" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[10px] font-bold uppercase">Min</button>
+          <button data-onclick="Calculator.gsolveExtremum('max')" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[10px] font-bold uppercase">Max</button>
+          <button data-onclick="Calculator.gsolveYInt()" class="bg-black/10 hover:bg-black/20 py-2 rounded text-[10px] font-bold uppercase">Y-Intercept</button>
+          <button data-onclick="Calculator.gsolveIntersect()" class="col-span-2 bg-[#1c1f26] text-white hover:bg-[#2d323e] py-2 rounded text-[10px] font-bold uppercase">Intersect Y1 &amp; Y2</button>
+        </div>
+      `;
+    this.showLcdModal('G-SOLVE', html);
+  },
+  showGraphResult(label, x, y) {
+    const g = this.state.graph;
+    g.trace = true;
+    g.traceX = x;
+    this.closeLcdModal();
+    this.drawGraph();
+    this.DOM.graphStatus.textContent = `${label}: x=${math.round(x, 6)}  y=${math.round(y, 6)}`;
+  },
+  gsolveRoot() {
+    const g = this.state.graph, N = 800;
+    let prevX = g.xmin, prevY = this.sampleFn(g.y1, prevX);
+    for (let i = 1; i <= N; i++) {
+      const x = g.xmin + (i / N) * (g.xmax - g.xmin);
+      const y = this.sampleFn(g.y1, x);
+      if (isFinite(prevY) && isFinite(y) && prevY * y < 0) {
+        let lo = prevX, hi = x;
+        for (let k = 0; k < 40; k++) {
+          const mid = (lo + hi) / 2;
+          if (this.sampleFn(g.y1, lo) * this.sampleFn(g.y1, mid) <= 0)
+            hi = mid;
+          else
+            lo = mid;
+        }
+        const rx = (lo + hi) / 2;
+        this.showGraphResult('Root', rx, this.sampleFn(g.y1, rx));
+        return;
+      }
+      prevX = x;
+      prevY = y;
+    }
+    this.showLcdModal('G-Solve', '<p class="p-2 text-rose-700 font-bold">No root found in current view.</p>');
+  },
+  gsolveExtremum(kind) {
+    const g = this.state.graph, N = 800;
+    let best = null, bestY = kind === 'min' ? Infinity : -Infinity;
+    for (let i = 0; i <= N; i++) {
+      const x = g.xmin + (i / N) * (g.xmax - g.xmin);
+      const y = this.sampleFn(g.y1, x);
+      if (!isFinite(y))
+        continue;
+      if ((kind === 'min' && y < bestY) || (kind === 'max' && y > bestY)) {
+        bestY = y;
+        best = x;
+      }
+    }
+    if (best === null) {
+      this.showLcdModal('G-Solve', '<p class="p-2 text-rose-700 font-bold">No extremum found.</p>');
+      return;
+    }
+    const span = (g.xmax - g.xmin) / N;
+    let lo = best - span, hi = best + span;
+    const phi = (Math.sqrt(5) - 1) / 2;
+    for (let k = 0; k < 60; k++) {
+      const c = hi - phi * (hi - lo), d = lo + phi * (hi - lo);
+      const fc = this.sampleFn(g.y1, c), fd = this.sampleFn(g.y1, d);
+      if (kind === 'min' ? fc < fd : fc > fd)
+        hi = d;
+      else
+        lo = c;
+    }
+    const rx = (lo + hi) / 2;
+    this.showGraphResult(kind === 'min' ? 'Min' : 'Max', rx, this.sampleFn(g.y1, rx));
+  },
+  gsolveYInt() {
+    const g = this.state.graph;
+    this.showGraphResult('Y-Int', 0, this.sampleFn(g.y1, 0));
+  },
+  gsolveIntersect() {
+    const g = this.state.graph;
+    if (!g.y2) {
+      this.showLcdModal('G-Solve', '<p class="p-2 text-rose-700 font-bold">Set Y2 first.</p>');
+      return;
+    }
+    const N = 800;
+    let prevX = g.xmin, prevD = this.sampleFn(g.y1, prevX) - this.sampleFn(g.y2, prevX);
+    for (let i = 1; i <= N; i++) {
+      const x = g.xmin + (i / N) * (g.xmax - g.xmin);
+      const d = this.sampleFn(g.y1, x) - this.sampleFn(g.y2, x);
+      if (isFinite(prevD) && isFinite(d) && prevD * d < 0) {
+        let lo = prevX, hi = x;
+        for (let k = 0; k < 40; k++) {
+          const mid = (lo + hi) / 2;
+          const fm = this.sampleFn(g.y1, mid) - this.sampleFn(g.y2, mid);
+          const flo = this.sampleFn(g.y1, lo) - this.sampleFn(g.y2, lo);
+          if (flo * fm <= 0)
+            hi = mid;
+          else
+            lo = mid;
+        }
+        const rx = (lo + hi) / 2;
+        this.showGraphResult('Isect', rx, this.sampleFn(g.y1, rx));
+        return;
+      }
+      prevX = x;
+      prevD = d;
+    }
+    this.showLcdModal('G-Solve', '<p class="p-2 text-rose-700 font-bold">No intersection found in current view.</p>');
+  },
+  convertToDmsDisplay() {
+    try {
+      let raw = this.getRawExpression().trim() || this.state.lastCalculatedAnswer;
+      let ev = this.balanceParens(this.addImplicitMultiplication(this.convertDms(this.getEvalExpression(raw))));
+      const val = math.number(math.evaluate(ev));
+      if (typeof val !== 'number' || !isFinite(val))
+        return;
+      const sign = val < 0 ? '-' : '';
+      const abs = Math.abs(val);
+      const d = Math.floor(abs);
+      const mFull = (abs - d) * 60;
+      const m = Math.floor(mFull);
+      const s = (mFull - m) * 60;
+      this.renderKatex(`${sign}${d}^{\\circ}\\,${m}'\\,${math.round(s, 3)}''`, this.DOM.bigDisplay);
+      this.DOM.smallResult.innerHTML = `<span class="text-xs font-bold text-slate-700">DMS Convert</span>`;
+    }
+    catch (e) { }
+  },
+  convertDms(str) {
+    return str
+      .replace(/(-?\d+(?:\.\d+)?)°(\d+(?:\.\d+)?)°(\d+(?:\.\d+)?)/g, 'dms($1,$2,$3)')
+      .replace(/(-?\d+(?:\.\d+)?)°(\d+(?:\.\d+)?)(?!\d*°)/g, 'dms($1,$2,0)')
+      .replace(/(-?\d+(?:\.\d+)?)°(?!\d)/g, 'dms($1,0,0)');
+  },
+  toggleTheme() {
+    this.state.theme = this.state.theme === 'dark' ? 'light' : 'dark';
+    const t = this.state.theme === 'dark' ? { bg: '#0d0f14', plate: '#1a1e29', lcd: '#9ebf93', ink: '#0d1607' } : { bg: '#dfe2e8', plate: '#f2f3f6', lcd: '#b9c9b3', ink: '#101a08' };
+    document.documentElement.classList.toggle('light', this.state.theme === 'light');
+    document.documentElement.style.setProperty('--bg-main', t.bg);
+    document.documentElement.style.setProperty('--calc-plate', t.plate);
+    document.documentElement.style.setProperty('--lcd-bg', t.lcd);
+    document.documentElement.style.setProperty('--lcd-ink', t.ink);
+    document.getElementById('btnTheme').textContent = this.state.theme === 'dark' ? '🌙' : '☀️';
+  },
+  CONV: {
+    Length: { mm: .001, cm: .01, m: 1, km: 1000, in: .0254, ft: .3048, yd: .9144, mi: 1609.344, nmi: 1852, fathom: 1.8288 },
+    Mass: { mg: .000001, g: .001, kg: 1, ton: 907.18474, tonne: 1000, oz: .028349523125, lb: .45359237, stone: 6.35029318, grain: .00006479891 },
+    Volume: { ml: .000001, l: .001, m3: 1, gal: .003785411784, qt: .000946352946, pt: .000473176473, cup: .0002365882365, tbsp: .0000147868, tsp: .00000492892, floz: .0000295735 },
+    Area: { mm2: .000001, cm2: .0001, m2: 1, km2: 1000000, in2: .00064516, ft2: .09290304, yd2: .83612736, acre: 4046.8564224, hectare: 10000 },
+    Speed: { 'm/s': 1, 'km/h': .2777778, mph: .44704, knot: .5144444, 'ft/s': .3048 },
+    Time: { ms: .001, s: 1, min: 60, h: 3600, day: 86400, week: 604800, month: 2629800, year: 31557600 },
+    Pressure: { Pa: 1, kPa: 1000, bar: 100000, atm: 101325, psi: 6894.757293168, mmHg: 133.322387415 },
+    Energy: { J: 1, kJ: 1000, cal: 4.184, kcal: 4184, Wh: 3600, kWh: 3600000, BTU: 1055.05585262 },
+    Power: { W: 1, kW: 1000, MW: 1000000, hp: 745.699871582 },
+    Angle: { deg: 1, rad: 57.29577951308232, grad: .9 },
+    Data: { b: .125, B: 1, KB: 1024, MB: 1048576, GB: 1073741824, TB: 1099511627776, Kb: 128, Mb: 131072, Gb: 134217728 }
+  },
+  openConvert() {
+    const cats = Object.keys(this.CONV).concat('Temperature');
+    const opts = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    const html = `<div class="flex flex-col gap-1.5 p-1 text-slate-900 font-sans">
+      <select id="convCat" onchange="Calculator.fillConvUnits()" class="w-full bg-slate-50 border border-slate-400 rounded py-1 px-1 text-xs font-bold">${opts}</select>
+      <input id="convVal" type="number" value="1" class="w-full bg-slate-50 border border-slate-400 rounded py-1 px-1 text-xs font-bold">
+      <div class="flex gap-1.5 items-center">
+      <select id="convFrom" class="w-full bg-slate-50 border border-slate-400 rounded py-1 px-1 text-[10px] font-bold"></select>
+      <span class="text-[10px] font-black">→</span>
+      <select id="convTo" class="w-full bg-slate-50 border border-slate-400 rounded py-1 px-1 text-[10px] font-bold"></select>
+      </div>
+      <button data-onclick="Calculator.doConvert()" class="mt-1 w-full bg-slate-800 text-slate-100 font-bold py-1.5 rounded text-[10px] uppercase hover:bg-slate-700">Convert</button>
+      <div id="convOut" class="text-xs font-black pt-1"></div>
+      </div>`;
+    this.showLcdModal('UNIT CONVERT', html);
+    this.fillConvUnits();
+  },
+  fillConvUnits() {
+    const cat = document.getElementById('convCat').value;
+    const units = cat === 'Temperature' ? ['C', 'F', 'K'] : Object.keys(this.CONV[cat]);
+    const o = units.map(u => `<option value="${u}">${u}</option>`).join('');
+    document.getElementById('convFrom').innerHTML = o;
+    document.getElementById('convTo').innerHTML = o;
+  },
+  doConvert() {
+    const cat = document.getElementById('convCat').value;
+    const from = document.getElementById('convFrom').value, to = document.getElementById('convTo').value;
+    const val = parseFloat(document.getElementById('convVal').value) || 0;
+    let out;
+    if (cat === 'Temperature') {
+      const c = from === 'C' ? val : from === 'F' ? (val - 32) * 5 / 9 : val - 273.15;
+      out = to === 'C' ? c : to === 'F' ? c * 9 / 5 + 32 : c + 273.15;
+    }
+    else {
+      out = val * this.CONV[cat][from] / this.CONV[cat][to];
+    }
+    document.getElementById('convOut').textContent = val + ' ' + from + ' = ' + math.format(out, { precision: 10 }) + ' ' + to;
+    this.state.lastCalculatedAnswer = math.format(out, { precision: 15 });
+  },
+  calculate() {
+    if (this.state.activeMode === 'GRAPH') {
+      this.drawGraph();
+      return;
+    }
+    if (this.state.activeMode === 'ALGEBRA') {
+      this.performAlgebra('simplify');
+      return;
+    }
+    let raw = this.getRawExpression().trim();
+    if (!raw)
+      return;
+    try {
+      let evalStr = this.getEvalExpression(raw);
+      evalStr = this.convertDms(evalStr);
+      evalStr = this.addImplicitMultiplication(evalStr);
+      evalStr = this.balanceParens(evalStr);
+      const scope = {
+        A: math.bignumber(this.memory.A), B: math.bignumber(this.memory.B), C: math.bignumber(this.memory.C),
+        D: math.bignumber(this.memory.D), E: math.bignumber(this.memory.E), F: math.bignumber(this.memory.F),
+        X: math.bignumber(this.memory.X), Y: math.bignumber(this.memory.Y), M: math.bignumber(this.memory.M),
+        MatA: this.matrices.A, MatB: this.matrices.B, MatC: this.matrices.C,
+        VctA: this.vectors.A, VctB: this.vectors.B, VctC: this.vectors.C
+      };
+      let res = math.evaluate(evalStr, scope);
+      let displayRes = '';
+      if (math.isBigNumber(res) || typeof res === 'number') {
+        displayRes = this.formatBigPrecision(res);
+      }
+      else if (res && res.isResultSet) {
+        displayRes = '[' + res.entries.map(e => this.formatBigPrecision(e)).join(', ') + ']';
+      }
+      else if (math.typeOf(res) === 'Matrix' || Array.isArray(res)) {
+        displayRes = math.parse(JSON.stringify(res)).toTex();
+      }
+      else {
+        displayRes = res.toString();
+      }
+      if (!displayRes.includes('\\')) {
+        this.state.lastCalculatedAnswer = displayRes;
+        this.saveToHistory(this.getPlainExpression(raw), displayRes);
+        this.state.mainExpr = displayRes;
+        this.state.mainCursor = displayRes.length;
+        this.state.activeFrac = null;
+        this.renderPreview();
+        this.DOM.smallResult.innerHTML = `<span class="text-xs text-slate-700 font-bold">Ans = ${displayRes}</span>`;
+        if (this.state.activeMode === 'BASE' && (math.isBigNumber(res) || typeof res === 'number'))
+          this.showBaseTable(res);
+      }
+      else {
+        this.DOM.smallResult.innerHTML = `<span class="text-xs font-bold text-slate-700">Matrix/Vector Eval</span>`;
+        this.renderKatex(displayRes, this.DOM.bigDisplay);
+        this.saveToHistory(this.getPlainExpression(raw), 'Matrix/Vector');
+      }
+    }
+    catch (e) {
+      this.DOM.smallResult.innerHTML = `<span class="text-xs font-bold text-rose-700">Syntax Error</span>`;
+      console.error(e);
+    }
+  }
+};
+window.addEventListener('DOMContentLoaded', () => {
+  Calculator.init();
+});
+"use strict";
+document.addEventListener('click', function (evt) {
+  const target = evt.target.closest('[data-onclick]');
+  if (!target)
+    return;
+  const code = target.getAttribute('data-onclick');
+  if (!code)
+    return;
+  try {
+    new Function(code).call(target);
+  }
+  catch (err) {
+    console.error('Action dispatch error for data-onclick="' + code + '":', err);
+  }
+}, false);
+</script>
+</body>
+</html>
